@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "name": "loomground-solver",
+  "version": "0.3.0",
+  "description": "Analytic and probabilistic reasoning skills over the Loomground Solver kernel: model opponents, track probabilities, analyse strategy, estimate liability, assess litigation risk, analyse risks, and advise on optional add-ons.",
+  "author": {
+    "name": "Loomground Contributors"
+  },
+  "keywords": [
+    "bayesian",
+    "decision-theory",
+    "deterministic",
+    "loomground",
+    "metacognition",
+    "provider-agnostic",
+    "risk",
+    "solver",
+    "world-model"
+  ],
+  "skills": [
+    {
+      "name": "opponent-modeler",
+      "path": "skills/opponent-modeler",
+      "provides": [
+        "solver.opponent-model"
+      ]
+    },
+    {
+      "name": "probability-tracker",
+      "path": "skills/probability-tracker",
+      "provides": [
+        "solver.probability-track"
+      ]
+    },
+    {
+      "name": "strategic-analysis",
+      "path": "skills/strategic-analysis",
+      "provides": [
+        "solver.strategic-analysis"
+      ]
+    },
+    {
+      "name": "estimate-liability",
+      "path": "skills/estimate-liability",
+      "provides": [
+        "solver.liability-estimate"
+      ]
+    },
+    {
+      "name": "litigation-risk-assessor",
+      "path": "skills/litigation-risk-assessor",
+      "provides": [
+        "solver.litigation-risk"
+      ]
+    },
+    {
+      "name": "analyse-risks",
+      "path": "skills/analyse-risks",
+      "provides": [
+        "solver.risk-analysis"
+      ]
+    },
+    {
+      "name": "advise-solver-addons",
+      "path": "skills/advise-solver-addons",
+      "provides": [
+        "reasoning.addon-advice"
+      ]
+    }
+  ],
+  "capabilities": {
+    "solver.opponent-model": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "solver.probability-track": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "solver.strategic-analysis": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "solver.liability-estimate": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "solver.litigation-risk": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "solver.risk-analysis": {
+      "mode": "read",
+      "humanConfirmation": false
+    },
+    "reasoning.addon-advice": {
+      "mode": "read",
+      "humanConfirmation": false
+    }
+  },
+  "runtime": {
+    "python": ">=3.10",
+    "network": false,
+    "config": [],
+    "requires": [
+      "loomground-governance",
+      "loomground-solver"
+    ]
+  },
+  "adapters": {
+    "claude": {
+      "marketplaceSource": {
+        "source": "url",
+        "url": "https://github.com/flxk1/loomground-solver.git"
+      }
+    },
+    "codex": {
+      "interface": {
+        "displayName": "Loomground Solver",
+        "shortDescription": "Analytic decision reasoning over the Loomground Solver",
+        "longDescription": "Reason under uncertainty about opponents, probabilities, strategy, liability, litigation, and risk, with a named method behind every result. Thin wrappers delegate to the installed Loomground Solver kernel and fail closed when it is unavailable.",
+        "developerName": "Loomground Contributors",
+        "category": "Productivity",
+        "capabilities": [
+          "Decision theory",
+          "Bayesian estimation",
+          "Risk analysis",
+          "Local-first",
+          "Add-on advice"
+        ],
+        "defaultPrompt": [
+          "What's my best move here?",
+          "How likely is liability given these facts?",
+          "Should this problem use the world-model add-on?"
+        ]
+      }
+    },
+    "generic": {}
+  }
+}

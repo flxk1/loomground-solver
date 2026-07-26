@@ -1,0 +1,19 @@
+{
+  "name": "loomground-solver",
+  "version": "0.3.0",
+  "description": "Analytic and probabilistic reasoning skills over the Loomground Solver kernel: model opponents, track probabilities, analyse strategy, estimate liability, assess litigation risk, analyse risks, and advise on optional add-ons.",
+  "author": {
+    "name": "Loomground Contributors"
+  },
+  "keywords": [
+    "bayesian",
+    "decision-theory",
+    "deterministic",
+    "loomground",
+    "metacognition",
+    "provider-agnostic",
+    "risk",
+    "solver",
+    "world-model"
+  ]
+}
