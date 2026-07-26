@@ -1,0 +1,19 @@
+version = 1
+SPDX-PackageName = "loomground-solver"
+SPDX-PackageSupplier = "Organization: Loomground Contributors"
+
+[[annotations]]
+path = ["*.md", "**/*.md", ".gitignore", "NOTICE", "pyproject.toml", "requirements-dev.txt"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "Apache-2.0"
+
+[[annotations]]
+path = [
+  ".github/**", "src/loomground_solver/**", "scripts/**", "tests/**",
+  "*.json", "*.toml",
+  "skills/**", ".claude-plugin/**",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2026 flxk1"
+SPDX-License-Identifier = "Apache-2.0"
