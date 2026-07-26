@@ -1,0 +1,35 @@
+name: release-gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.14"]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065  # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pip install . pytest build
+      - run: python tools/supply_chain_gate.py --self-test
+      - run: python tools/supply_chain_gate.py
+      - name: Record resolved Loomground revision
+        run: python -m pip freeze | grep '^loomground-governance @'
+      - run: python -m pytest -q
+      - run: python scripts/run_loomground_conformance.py
+      - run: python scripts/check_version_coherence.py
+      - run: python scripts/check_adapter_selection_neutrality.py
+      - run: python scripts/check_register.py
+      - run: python -m build
