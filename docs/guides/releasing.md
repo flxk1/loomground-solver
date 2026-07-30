@@ -52,7 +52,7 @@ dependencies = [
 Example the earlier engine deployment lock:
 
 ```text
-loomground-governance==0.8.1
+loomground-governance==0.8.2
 loomground-solver==0.1.3
 loomground-versum==0.6.4
 external==0.6.8.2
