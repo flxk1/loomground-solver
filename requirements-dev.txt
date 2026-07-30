@@ -5,4 +5,6 @@
 # Immutable release commits: governance v0.8.2 and deontic v0.1.2.
 loomground-governance @ git+https://github.com/flxk1/loomground-governance@7e7bddde54f2bd8b72149896546a66820f2617e0
 loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@fd103e422f09a9e9613b50268372bba58787e295
+# tomllib is stdlib from 3.11; supply_chain_gate.py falls back to tomli on 3.10.
+tomli==2.2.1 ; python_version < "3.11"
 pytest==9.1.1
