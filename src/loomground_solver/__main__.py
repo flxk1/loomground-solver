@@ -51,7 +51,7 @@ def main(argv=None) -> int:
             source = Path(args.source).read_text(encoding="utf-8")
             transport = _read_json(args.transport) if args.transport else None
             _write_json(reason_loomground(source, transport), args.output)
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
+    except (OSError, ValueError, KeyError, TypeError, RecursionError, json.JSONDecodeError) as exc:
         print(f"loomground-solver: {exc}", file=sys.stderr)
         return 2
     return 0
