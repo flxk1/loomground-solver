@@ -9,8 +9,12 @@ import json
 import re
 import sys
 import tempfile
-import tomllib
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11: fall back to the tomli backport
+    import tomli as tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 GATE_VERSION = "loomground-supply-chain-gate/2026.07.25.1"
@@ -22,7 +26,7 @@ KNOWN = {
     "pdfminer-six": "MIT", "pdfplumber": "MIT", "pillow": "MIT-CMU",
     "pluggy": "MIT", "pycparser": "BSD-3-Clause", "pygments": "BSD-2-Clause",
     "pypdfium2": "Apache-2.0 OR BSD-3-Clause", "pytest": "MIT",
-    "referencing": "MIT", "rpds-py": "MIT",
+    "referencing": "MIT", "rpds-py": "MIT", "tomli": "MIT",
 }
 ALLOWED = {"Apache-2.0", "MIT", "BSD-2-Clause", "BSD-3-Clause", "ISC",
            "0BSD", "MIT-0", "CC0-1.0", "BlueOak-1.0.0", "Python-2.0",
@@ -85,6 +89,7 @@ def inventory() -> dict:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
+            line = line.split(";", 1)[0].rstrip()  # strip PEP 508 env marker
             name = re.split(r"\s*@\s*|[<>=!~]", line, maxsplit=1)[0]
             if req.name == "requirements-release.txt":
                 version = line[len(name):].strip()
