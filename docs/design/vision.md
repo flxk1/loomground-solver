@@ -4,9 +4,7 @@ The canonical statement of what this solver is for, in product-owner terms.
 Written 2026-07-18 as a faithful readback of the design conversation, so any
 reviewer (human or a model like Codex) can check the code against the intent.
 Nothing here is collapsed or paraphrased away. Companion to the
-[operations guide](../guides/operations.md) (how to
-run it) and the project-memory notes `solver-ideas.md` / `solver-build.md` /
-`solver-placement.md`.
+[operations guide](../guides/operations.md) (how to run it).
 
 ---
 

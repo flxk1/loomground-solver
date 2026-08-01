@@ -53,9 +53,11 @@ The kernel is a **verifier + structured world model**, not a retriever. A genera
   escalate (never guess) the coordinates the federation does not pin down.
 - An open registry of 19 reasoning methods across logic, philosophy, methodology,
   rationalist decision theory, mathematics, and data science (`register_method`
-  for more).
-- The LLM-interpretation bridge, signed replayable provenance, and a verifier
-  data-pump (verified runs → training data).
+  for more), plus the `loomground` governance-language route registered the same
+  way (so `METHODS` holds 20 entries in total).
+- The LLM-interpretation bridge, tamper-evident replayable provenance (signable
+  via an injected host signer; the default is a SHA-256 content digest), and a
+  verifier data-pump (verified runs → training data).
 - A conforming Loomground language implementation and first-class nD route:
   parse `.lg`, validate the policy graph, evaluate transports, reproduce the
   canonical observation and map governance outcomes into the bounded Solver
@@ -69,7 +71,7 @@ and wire it into RVND and Versum.
 
 ```bash
 python3 -m pip install -e . --break-system-packages   # or into a venv
-python3 -m pytest -q                                   # expect: 459 passed
+python3 -m pytest -q                                   # expect: 463 passed
 ```
 
 The two load-bearing gates:
