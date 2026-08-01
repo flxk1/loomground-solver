@@ -5,12 +5,12 @@ Solver implements Loomground as a deterministic nD language route.
 | Solver language identifier | Accepted input | Conformance basis |
 | --- | --- | --- |
 | `0.7` | Released v0.7 language | Loomground manifest `0.7` |
-| `0.8.1` | Released v0.8.1 language | Loomground `v0.8.1` conformance vectors |
+| `0.8.2` | Released v0.8.2 language | Loomground `v0.8.2` conformance vectors |
 
-Solver accepts `0.7` and the published `0.8.1`. A request must name one of
+Solver accepts `0.7` and the published `0.8.2`. A request must name one of
 these two versions; Solver never silently upgrades an unrequested version.
 
-The `0.8.1` row above is illustrative, not a hardcoded constant: Solver derives
+The `0.8.2` row above is illustrative, not a hardcoded constant: Solver derives
 `SUPPORTED_LANGUAGE_VERSIONS` at runtime from whichever `loomground-governance`
 version is actually installed (see `language_version()` in
 `src/loomground_solver/loomground.py`), so an installed prerelease or patch
