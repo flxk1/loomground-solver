@@ -113,12 +113,12 @@ the standard request shape:
   "request_id": "lg-1",
   "problem": {
     "language": "loomground",
-    "language_version": "0.8.1",
+    "language_version": "0.8.2",
     "source": "actor bot ...",
     "transport": {"activations": []}
   },
   "candidates": [],
-  "solver_profile": "loomground@0.8.1",
+  "solver_profile": "loomground@0.8.2",
   "required_capabilities": ["loomground-governance", "signed-replay"]
 }
 ```
