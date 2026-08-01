@@ -2,7 +2,7 @@
 
 The universal reasoning/decision kernel, extracted from RVND into a standalone package that **RVND and the KG (Versum) both import** without owning it. Governance and corpus arrive only through injected ports, so the same kernel runs as: the KG's L3 (may write derived truth), the standalone path-solver (writes nothing), and RVND's clamped verdict instance.
 
-The release gate currently contains **389 tests**; the package imports in an empty environment with no governance/domain leak. The RVND-side integration (shims + adapters + their tests) lives in the RVND repo; every public RVND symbol is re-exported by the shims there.
+The release gate currently contains **463 tests**; the package imports in an empty environment with no governance/domain leak. The RVND-side integration (shims + adapters + their tests) lives in the RVND repo; every public RVND symbol is re-exported by the shims there.
 
 ## What's in the bundle
 
@@ -33,7 +33,7 @@ loomground-solver/
 ```bash
 cd loomground-solver
 python3 -m pip install -e . --break-system-packages   # or into a venv
-python3 -m pytest -q                                   # expect: 389 passed
+python3 -m pytest -q                                   # expect: 463 passed
 python3 scripts/run_loomground_conformance.py           # expect: 47/47 vectors passed
 python3 -m build                                        # build sdist + wheel
 ```
