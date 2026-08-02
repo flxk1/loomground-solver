@@ -23,6 +23,9 @@ Shipped filters (all domain-neutral):
   * ``statistics``      — statistical descriptors: edge count, distinct dimensions,
                           Shannon entropy and concentration of the dimension
                           distribution, acceptance / undecided ratios.
+  * ``off_grid``        — the FLOOR: relations present but on NO declared dimension —
+                          the residual, un-coordinated edges every other lens drops.
+                          The *un-interpreted relations*.
 
 Register your own with :func:`register_filter` — e.g. a domain filter for
 mathematical structure, rhetoric, citation shape. ``distance`` compares over the
@@ -42,6 +45,7 @@ from .dimensions import Dimension
 FP_VERSION = "fp-2"
 
 _DIMS = tuple(d.value for d in Dimension)
+_VALID_DIMS = frozenset(_DIMS)
 _DEONTIC = ("obligatory", "permitted", "prohibited")
 
 
@@ -265,6 +269,52 @@ def _adapter_context(ctx: dict) -> Optional[dict]:
     }
 
 
+def _off_grid(ctx: dict) -> dict:
+    """The FLOOR made a first-class facet: relations PRESENT in the graph but placed on
+    NO declared Federation dimension. Every other lens (``logical_form``, ``statistics``,
+    ``argument_types``) counts only edges whose ``dimension`` is one of the five and
+    silently drops the rest; this lens fingerprints exactly what they drop. An edge is
+    off-grid when its ``dimension`` is missing or is not a declared dimension — the
+    residual, un-coordinated relation. It reports the off-grid count, the ratio against
+    all edges, and the distinct predicates and unknown dimension labels carrying the
+    off-grid mass, so an un-interpreted floor is a comparable, inspectable RECALL signal
+    instead of an invisible leak. Domain-neutral: it names no vocabulary, only the
+    absence of one."""
+    total = off = 0
+    predicates: set = set()
+    labels: set = set()
+    for e in _edges(ctx):
+        total += 1
+        dim = _get(e, "dimension", None)
+        if dim in _VALID_DIMS:
+            continue
+        off += 1
+        predicate = str(_get(e, "predicate", "")).strip()
+        if predicate:
+            predicates.add(predicate)
+        if dim not in (None, ""):
+            labels.add(str(dim))
+    return {"off_grid_edges": off, "total_edges": total,
+            "off_grid_ratio": round(off / total, 4) if total else 0.0,
+            "off_grid_predicates": sorted(predicates),
+            "off_grid_dimensions": sorted(labels)}
+
+
+def _off_grid_distance(fa: dict, fb: dict) -> float:
+    """Compare on the two recall-relevant facets only: how MUCH of the graph is off-grid
+    (``off_grid_ratio``, already in [0,1]) and WHICH predicates are off-grid (Jaccard).
+    Raw counts are ignored so two problems of different size but similar floor shape still
+    match — the point of a recall filter."""
+    ratio_a = float(fa.get("off_grid_ratio", 0.0) or 0.0)
+    ratio_b = float(fb.get("off_grid_ratio", 0.0) or 0.0)
+    ratio_distance = abs(ratio_a - ratio_b)
+    preds_a = set(fa.get("off_grid_predicates", []) or [])
+    preds_b = set(fb.get("off_grid_predicates", []) or [])
+    union = preds_a | preds_b
+    jaccard_distance = (1.0 - len(preds_a & preds_b) / len(union)) if union else 0.0
+    return (ratio_distance + jaccard_distance) / 2.0
+
+
 register_filter("logical_form", _logical_form)
 register_filter("attack_topology", _attack_topology)
 register_filter("negative_space", _negative_space)
@@ -272,6 +322,7 @@ register_filter("argument_types", _argument_types)
 register_filter("statistics", _statistics)
 register_filter("contradiction", _contradiction)
 register_filter("adapter_context", _adapter_context)
+register_filter("off_grid", _off_grid, _off_grid_distance)
 
 
 # ── build + compare + sign ───────────────────────────────────────────────────
