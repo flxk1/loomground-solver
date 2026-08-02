@@ -2,6 +2,19 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.2.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.1.3...solver-v0.2.0) (2026-08-02)
+
+
+### Features
+
+* add off_grid fingerprint filter for un-coordinated relations ([d4adbae](https://github.com/flxk1/loomground-solver/commit/d4adbae769bfe1a6e3646427a0019ffe94ff64f2))
+
+
+### Documentation
+
+* correct test counts, language version, and provenance wording ([ea4d95f](https://github.com/flxk1/loomground-solver/commit/ea4d95fd5a3e2a69ccaec188e7709abe97cf3411))
+* correct test counts, language version, and provenance wording ([2cc761d](https://github.com/flxk1/loomground-solver/commit/2cc761d65eadab78ba99bb272f9473558dc89f71))
+
 ## [0.1.3] - 2026-07-26
 
 - Pin the privacy-clean Governance and Deontic publication roots.
