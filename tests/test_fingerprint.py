@@ -79,6 +79,55 @@ def test_statistics_filter_entropy_and_ratios():
     assert one["dimension_entropy"] == 0.0 and one["dimension_concentration"] == 1.0
 
 
+# ── off_grid: the floor made a first-class facet ─────────────────────────────
+
+def test_off_grid_filter_counts_undeclared_edges():
+    # one declared (causal) edge, two off-grid: an unknown label and a missing dimension
+    pairs = [
+        _edge("A", "B", "causal"),
+        {"id": "C-D", "edges": [{"subject": "C", "predicate": "vibes_with",
+                                 "object": "D", "dimension": "aesthetic"}]},
+        {"id": "E-F", "edges": [{"subject": "E", "predicate": "rhymes_with",
+                                 "object": "F"}]},                       # no dimension
+    ]
+    og = fingerprint(pairs=pairs, filters=["off_grid"])["facets"]["off_grid"]
+    assert og["total_edges"] == 3 and og["off_grid_edges"] == 2
+    assert og["off_grid_ratio"] == round(2 / 3, 4)
+    assert og["off_grid_predicates"] == ["rhymes_with", "vibes_with"]
+    assert og["off_grid_dimensions"] == ["aesthetic"]   # missing dim is not a label
+
+
+def test_off_grid_empty_when_everything_is_on_grid():
+    og = fingerprint(pairs=[_edge("A", "B", "causal"), _edge("B", "C", "temporal")],
+                     filters=["off_grid"])["facets"]["off_grid"]
+    assert og["off_grid_edges"] == 0 and og["off_grid_ratio"] == 0.0
+    assert og["off_grid_predicates"] == [] and og["off_grid_dimensions"] == []
+
+
+def test_off_grid_is_in_the_default_roster():
+    fp = fingerprint(pairs=[_edge("A", "B", "causal")])
+    assert "off_grid" in fp["facets"]
+
+
+def test_off_grid_distance_ignores_size_matches_shape():
+    # same off-grid predicate set + same ratio at different scales -> distance 0
+    small = fingerprint(pairs=[{"id": "1", "edges": [
+        {"subject": "a", "predicate": "vibes_with", "object": "b", "dimension": "aesthetic"}]}],
+        filters=["off_grid"])
+    big = fingerprint(pairs=[
+        {"id": "1", "edges": [{"subject": "a", "predicate": "vibes_with",
+                               "object": "b", "dimension": "aesthetic"}]},
+        {"id": "2", "edges": [{"subject": "c", "predicate": "vibes_with",
+                               "object": "d", "dimension": "aesthetic"}]},
+    ], filters=["off_grid"])
+    assert distance(small, big) == 0.0                  # ratio 1.0 both, same predicate
+    # a different off-grid predicate set -> positive, bounded distance
+    other = fingerprint(pairs=[{"id": "1", "edges": [
+        {"subject": "a", "predicate": "clashes_with", "object": "b", "dimension": "aesthetic"}]}],
+        filters=["off_grid"])
+    assert 0.0 < distance(small, other) <= 1.0
+
+
 # ── register a custom filter (the extensibility point) ───────────────────────
 
 def test_register_custom_filter():
