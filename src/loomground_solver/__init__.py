@@ -13,7 +13,7 @@ from __future__ import annotations
 from .dimensions import Dimension, compose, compose_weights
 
 # reasoning — composing inferences over the dimensioned graph
-from .reasoning import Edge, Inference, extract_edges, compose_paths
+from .reasoning import Edge, Inference, InferenceList, extract_edges, compose_paths
 
 # norm_contract — the shared verdict vocabulary
 from .norm_contract import Finding, Level, ContractReport
@@ -104,7 +104,7 @@ __all__ = [
     # dimensions
     "Dimension", "compose", "compose_weights",
     # reasoning
-    "Edge", "Inference", "extract_edges", "compose_paths",
+    "Edge", "Inference", "InferenceList", "extract_edges", "compose_paths",
     # norm_contract
     "Finding", "Level", "ContractReport",
     # contract
