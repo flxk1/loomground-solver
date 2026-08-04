@@ -134,18 +134,29 @@ def compose_paths(
     max_depth: int = 3,
     min_confidence: float = 0.0,
     max_results: int = 200,
+    min_hops: int = 2,
 ) -> InferenceList:
     """Compose multi-hop paths into inferences.
 
     Walks directed paths (the object of one edge is the subject of the next),
-    up to ``max_depth`` edges, with no repeated node (acyclic). Only paths of
-    two or more hops produce an inference — a single edge is already a fact, not
-    a derivation. Results are pruned below ``min_confidence`` and returned
-    highest-confidence first, capped at ``max_results``.
+    up to ``max_depth`` edges, with no repeated node (acyclic). By default only
+    paths of two or more hops produce an inference — a single edge is already a
+    fact, not a derivation. Results are pruned below ``min_confidence`` and
+    returned highest-confidence first, capped at ``max_results``.
 
-    All three caps are configurable; the defaults (``max_depth=3``,
-    ``min_confidence=0.0``, ``max_results=200``) reproduce the historical output
-    exactly, so raising them is opt-in. On a real regulation's graph (thousands
+    ``min_hops`` (default ``2``) sets the shortest path that counts as a result;
+    it is clamped to ``>= 1``. The default reproduces the historical output
+    exactly (derivations only). Pass ``min_hops=1`` to *also* record direct
+    single-hop links — a lone edge ``src →[predicate]→ dst`` recorded as a
+    1-hop inference (dimension = the edge's own dimension, confidence = its
+    weight) — so a consumer wanting "direct edge, else composed path" makes one
+    bounded call instead of a shortcut plus a fallback. Raising ``min_hops``
+    above ``2`` reports only longer chains.
+
+    The other caps are configurable too; the defaults (``max_depth=3``,
+    ``min_confidence=0.0``, ``max_results=200``, ``min_hops=2``) reproduce the
+    historical output exactly, so changing them is opt-in. On a real
+    regulation's graph (thousands
     of edges) the walk stays bounded in two ways so it never materialises an
     exponential frontier:
 
@@ -169,6 +180,7 @@ def compose_paths(
 
     max_depth = max(2, int(max_depth))
     cap = max(0, int(max_results))
+    floor_hops = max(1, int(min_hops))
 
     # Bounded min-heap of the best-so-far inferences. Each entry is
     # ``(confidence, -seq, inference)``; ``seq`` is a per-walk discovery counter,
@@ -226,7 +238,7 @@ def compose_paths(
                 truncated = True
                 continue
             new_path = path + [e]
-            if len(new_path) >= 2:
+            if len(new_path) >= floor_hops:
                 _record(Inference(
                     subject=new_path[0].subject,
                     object=e.object,

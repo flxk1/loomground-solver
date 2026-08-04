@@ -18,6 +18,9 @@ from .dimensions import Dimension, compose, compose_weights
 # reasoning — composing inferences over the dimensioned graph
 from .reasoning import Edge, Inference, InferenceList, extract_edges, compose_paths
 
+# graph — neighbourhood + graph-prep primitives around composition
+from .graph import neighborhood, to_undirected
+
 # relation — the typed-relation composition algebra (mechanism; table injected)
 from .relation import ESCALATE, RelationAlgebra
 
@@ -113,6 +116,8 @@ __all__ = [
     "Dimension", "compose", "compose_weights",
     # reasoning
     "Edge", "Inference", "InferenceList", "extract_edges", "compose_paths",
+    # graph — neighbourhood + graph-prep primitives
+    "neighborhood", "to_undirected",
     # relation composition (mechanism; domain supplies the table)
     "RelationAlgebra", "ESCALATE",
     # norm_contract
