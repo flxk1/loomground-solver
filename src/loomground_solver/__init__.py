@@ -9,11 +9,17 @@ coupling. Governance and corpus arrive through the injected ports in
 
 from __future__ import annotations
 
+# version — the single runtime version source (kept in lockstep with pyproject)
+from ._version import __version__
+
 # dimensions — the 5D edge model + algebra
 from .dimensions import Dimension, compose, compose_weights
 
 # reasoning — composing inferences over the dimensioned graph
 from .reasoning import Edge, Inference, InferenceList, extract_edges, compose_paths
+
+# relation — the typed-relation composition algebra (mechanism; table injected)
+from .relation import ESCALATE, RelationAlgebra
 
 # norm_contract — the shared verdict vocabulary
 from .norm_contract import Finding, Level, ContractReport
@@ -101,10 +107,14 @@ from .adapters import (
 )
 
 __all__ = [
+    # version
+    "__version__",
     # dimensions
     "Dimension", "compose", "compose_weights",
     # reasoning
     "Edge", "Inference", "InferenceList", "extract_edges", "compose_paths",
+    # relation composition (mechanism; domain supplies the table)
+    "RelationAlgebra", "ESCALATE",
     # norm_contract
     "Finding", "Level", "ContractReport",
     # contract
