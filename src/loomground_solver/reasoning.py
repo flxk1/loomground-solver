@@ -194,6 +194,7 @@ def compose_paths(
 
     def walk(node: str, visited: tuple[str, ...], path: list[Edge],
              dim: Optional[Dimension], conf: float) -> None:
+        nonlocal truncated
         if len(path) >= max_depth:
             return
         for e in adjacency.get(node, ()):
@@ -205,11 +206,27 @@ def compose_paths(
             else:
                 new_dim = compose(dim, e.dimension)          # left-fold
                 new_conf = compose_weights(conf, e.weight)
+            # ``new_conf`` is a monotone upper bound on every inference this
+            # subtree can yield: confidence is a product of edge weights in
+            # ``[0, 1]``, so every deeper path is ``<= new_conf``. Two prunes
+            # rest on that bound, and neither changes the result set — they
+            # only skip work that could not survive to the output:
+            if new_conf < min_confidence:
+                # Below the caller's floor; nothing deeper can rise to meet it.
+                continue
+            if cap > 0 and len(heap) >= cap and new_conf < heap[0][0]:
+                # Branch-and-bound: the best-of heap is full and this path
+                # already sits below its lowest retained confidence, so neither
+                # it nor any deeper path can displace a kept inference. Skipping
+                # the subtree is result-identical to walking it (every path in
+                # it would be recorded then immediately evicted) — but a
+                # qualifying path is being dropped, so raise the truncation
+                # signal exactly as that eviction would. This is what bounds the
+                # walk's *time*, not just its memory, on high-fan-out graphs.
+                truncated = True
+                continue
             new_path = path + [e]
             if len(new_path) >= 2:
-                if new_conf < min_confidence:
-                    # Monotonic: deeper paths only drop further. Prune subtree.
-                    continue
                 _record(Inference(
                     subject=new_path[0].subject,
                     object=e.object,
@@ -223,10 +240,6 @@ def compose_paths(
                         "source_pair": h.source_pair,
                     } for h in new_path],
                 ))
-            elif new_conf < min_confidence:
-                # Single edge already below the floor; the product can only
-                # shrink, so nothing on this subtree can qualify.
-                continue
             walk(e.object, visited + (e.object,), new_path, new_dim, new_conf)
 
     starts = [start] if start is not None else list(adjacency.keys())
