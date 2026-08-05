@@ -29,10 +29,28 @@ path" makes one bounded call rather than a shortcut plus a fallback.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from .dimensions import Dimension
 from .reasoning import Edge
+
+
+@dataclass(frozen=True)
+class Neighborhood:
+    """The typed result of :func:`neighborhood`.
+
+    ``focus`` is the queried node id, ``nodes`` the reached node ids (sorted,
+    always containing ``focus``), and ``edges`` the selected
+    :class:`~loomground_solver.reasoning.Edge` objects in discovery order —
+    the same shape as the other typed results in the engine
+    (:class:`~loomground_solver.reasoning.Edge`,
+    :class:`~loomground_solver.reasoning.Inference`).
+    """
+
+    focus: str
+    nodes: list[str] = field(default_factory=list)
+    edges: list[Edge] = field(default_factory=list)
 
 
 def _dimension_filter(dimensions: Optional[Iterable[Any]]) -> Optional[frozenset[str]]:
@@ -60,7 +78,7 @@ def neighborhood(
     *,
     depth: int = 2,
     dimensions: Optional[Iterable[Any]] = None,
-) -> dict[str, Any]:
+) -> Neighborhood:
     """Return the bounded neighbourhood of ``focus`` over ``edges``.
 
     A breadth-first sweep: the reached set is seeded with ``focus``, then for
@@ -76,11 +94,9 @@ def neighborhood(
     is in the given set (:class:`~loomground_solver.dimensions.Dimension` members
     or their string values, mixed freely); ``None`` means no restriction.
 
-    The result is::
-
-        {"focus": focus,
-         "nodes": [<reached node ids, sorted>],
-         "edges": [<selected Edge objects, in discovery order>]}
+    The result is a :class:`Neighborhood` — ``focus`` (the queried node id),
+    ``nodes`` (the reached node ids, sorted) and ``edges`` (the selected
+    :class:`~loomground_solver.reasoning.Edge` objects, in discovery order).
 
     This is intentionally *node-id* shaped, not record shaped: the primitive
     owns no domain records, so it returns the reached ids and the edges touched
@@ -111,11 +127,11 @@ def neighborhood(
                     seen.add(e)
                     selected.append(e)
 
-    return {
-        "focus": focus,
-        "nodes": sorted(reached, key=str),
-        "edges": selected,
-    }
+    return Neighborhood(
+        focus=focus,
+        nodes=sorted(reached, key=str),
+        edges=selected,
+    )
 
 
 def to_undirected(edges: list[Edge]) -> list[Edge]:
