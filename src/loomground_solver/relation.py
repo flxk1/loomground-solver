@@ -61,6 +61,11 @@ class RelationAlgebra:
     error, so a typo cannot silently degrade to "no inference". Lookups at
     reasoning time are lenient: an unknown pair composes to ``None`` (no relation
     follows) rather than raising, so noisy runtime data never crashes a walk.
+
+    :meth:`compose_path` treats :data:`ESCALATE` as a checkpoint, not poison:
+    when a step escalates, the fold restarts from the next leg (with the
+    ``escalated`` flag latched) rather than voiding the whole chain, so the
+    provenance of the legs beyond the contested step is still surfaced.
     """
 
     def __init__(

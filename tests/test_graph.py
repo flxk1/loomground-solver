@@ -12,7 +12,7 @@ from __future__ import annotations
 import pytest
 
 from loomground_solver.dimensions import Dimension
-from loomground_solver.graph import neighborhood, to_undirected
+from loomground_solver.graph import Neighborhood, neighborhood, to_undirected
 from loomground_solver.reasoning import Edge, compose_paths
 
 
@@ -26,56 +26,56 @@ def _e(s, o, dim=Dimension.RELATIONAL, *, predicate="p", weight=1.0, source_pair
 def test_neighborhood_depth_one_is_immediate_ring():
     edges = [_e("A", "B"), _e("B", "C"), _e("C", "D")]
     n = neighborhood(edges, "A", depth=1)
-    assert n["focus"] == "A"
-    assert n["nodes"] == ["A", "B"]
-    assert n["edges"] == [edges[0]]
+    assert n.focus == "A"
+    assert n.nodes == ["A", "B"]
+    assert n.edges == [edges[0]]
 
 
 def test_neighborhood_expands_with_depth():
     edges = [_e("A", "B"), _e("B", "C"), _e("C", "D")]
-    assert neighborhood(edges, "A", depth=2)["nodes"] == ["A", "B", "C"]
-    assert neighborhood(edges, "A", depth=3)["nodes"] == ["A", "B", "C", "D"]
+    assert neighborhood(edges, "A", depth=2).nodes == ["A", "B", "C"]
+    assert neighborhood(edges, "A", depth=3).nodes == ["A", "B", "C", "D"]
 
 
 def test_neighborhood_walks_undirected_for_reach():
     # focus is the OBJECT of an edge; it must still be reached via that edge.
     edges = [_e("X", "A"), _e("A", "Y")]
     n = neighborhood(edges, "A", depth=1)
-    assert n["nodes"] == ["A", "X", "Y"]
-    assert set(n["edges"]) == set(edges)
+    assert n.nodes == ["A", "X", "Y"]
+    assert set(n.edges) == set(edges)
 
 
 def test_neighborhood_bounded_beyond_graph_diameter():
     edges = [_e("A", "B"), _e("B", "C")]
     # depth far beyond the graph yields the whole component, no error, no growth.
     big = neighborhood(edges, "A", depth=99)
-    assert big["nodes"] == ["A", "B", "C"]
-    assert big["edges"] == edges
+    assert big.nodes == ["A", "B", "C"]
+    assert big.edges == edges
 
 
 def test_neighborhood_depth_zero_is_focus_alone():
     edges = [_e("A", "B")]
     n = neighborhood(edges, "A", depth=0)
-    assert n["nodes"] == ["A"]
-    assert n["edges"] == []
+    assert n.nodes == ["A"]
+    assert n.edges == []
 
 
 def test_neighborhood_negative_depth_clamped_to_zero():
     edges = [_e("A", "B")]
     n = neighborhood(edges, "A", depth=-5)
-    assert n["nodes"] == ["A"]
-    assert n["edges"] == []
+    assert n.nodes == ["A"]
+    assert n.edges == []
 
 
 def test_neighborhood_empty_graph():
     n = neighborhood([], "A", depth=3)
-    assert n == {"focus": "A", "nodes": ["A"], "edges": []}
+    assert n == Neighborhood(focus="A", nodes=["A"], edges=[])
 
 
 def test_neighborhood_isolated_focus():
     edges = [_e("B", "C"), _e("C", "D")]
     n = neighborhood(edges, "A", depth=3)
-    assert n == {"focus": "A", "nodes": ["A"], "edges": []}
+    assert n == Neighborhood(focus="A", nodes=["A"], edges=[])
 
 
 def test_neighborhood_dimension_filter():
@@ -85,18 +85,18 @@ def test_neighborhood_dimension_filter():
         _e("B", "D", Dimension.CAUSAL),
     ]
     causal = neighborhood(edges, "A", depth=2, dimensions=[Dimension.CAUSAL])
-    assert causal["nodes"] == ["A", "B", "D"]
-    assert all(e.dimension == Dimension.CAUSAL for e in causal["edges"])
+    assert causal.nodes == ["A", "B", "D"]
+    assert all(e.dimension == Dimension.CAUSAL for e in causal.edges)
     # string values accepted interchangeably with enum members
     by_str = neighborhood(edges, "A", depth=2, dimensions=["causal"])
-    assert by_str["nodes"] == causal["nodes"]
+    assert by_str.nodes == causal.nodes
 
 
 def test_neighborhood_empty_dimension_filter_excludes_everything():
     edges = [_e("A", "B", Dimension.CAUSAL)]
     n = neighborhood(edges, "A", depth=2, dimensions=[])
-    assert n["nodes"] == ["A"]
-    assert n["edges"] == []
+    assert n.nodes == ["A"]
+    assert n.edges == []
 
 
 def test_neighborhood_dedupes_and_is_deterministic():
@@ -104,12 +104,12 @@ def test_neighborhood_dedupes_and_is_deterministic():
     edges = [dup, dup, _e("B", "C")]
     n = neighborhood(edges, "A", depth=2)
     # the duplicate edge is selected at most once
-    assert n["edges"].count(dup) == 1
+    assert n.edges.count(dup) == 1
     # deterministic across runs
     again = neighborhood(edges, "A", depth=2)
     assert n == again
     # nodes are sorted
-    assert n["nodes"] == sorted(n["nodes"])
+    assert n.nodes == sorted(n.nodes)
 
 
 # ── to_undirected ────────────────────────────────────────────────
