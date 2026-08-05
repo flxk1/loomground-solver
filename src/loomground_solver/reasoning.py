@@ -155,10 +155,9 @@ def compose_paths(
 
     The other caps are configurable too; the defaults (``max_depth=3``,
     ``min_confidence=0.0``, ``max_results=200``, ``min_hops=2``) reproduce the
-    historical output exactly, so changing them is opt-in. On a real
-    regulation's graph (thousands
-    of edges) the walk stays bounded in two ways so it never materialises an
-    exponential frontier:
+    historical output exactly, so changing them is opt-in. On a large graph
+    (thousands of edges) the walk stays bounded in two ways so it never
+    materialises an exponential frontier:
 
     * **Subtree pruning.** Confidence is the product of edge weights (each in
       ``[0, 1]``), so it is monotonically non-increasing along a path. Once the
