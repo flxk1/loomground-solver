@@ -39,7 +39,12 @@ from enum import Enum
 from typing import Any, Iterable, Optional
 
 
-CONFIDENCE_FLOOR = 0.85  # matches the floor used across the suite (risk-analyser, legal-eval)
+from .predicate import PREDICATE_CONFIDENCE_FLOOR
+# One floor for the whole package. Defined once in the leaf module `predicate`
+# (which imports nothing from here, so no cycle) and aliased here as the canonical
+# name every [I]-tier harness consumes — `norm_contract.CONFIDENCE_FLOOR`. No second
+# 0.85 literal to drift.
+CONFIDENCE_FLOOR = PREDICATE_CONFIDENCE_FLOOR
 
 # Discretionary modality — its presence forbids an autonomous decision (NT-4).
 DISCRETION_MODALS = {"kann", "soll", "may", "should", "discretion", "ermessen"}
