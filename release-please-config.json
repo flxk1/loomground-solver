@@ -6,7 +6,8 @@
       "package-name": "loomground-solver",
       "include-component-in-tag": true,
       "component": "solver",
-      "changelog-path": "CHANGELOG.md"
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": ["src/loomground_solver/_version.py"]
     }
   }
 }
