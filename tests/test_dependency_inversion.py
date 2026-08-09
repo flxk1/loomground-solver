@@ -39,6 +39,19 @@ DOMAIN_LITERALS = (
 
 PY_FILES = sorted(p for p in PKG.rglob("*.py") if "__pycache__" not in p.parts)
 
+# The graded-panel case corpus (``eval/panel/cases/``) is domain DATA by design —
+# CaseSpec instances describing real statutes/contracts/policies — not engine
+# code. The purity rule (no domain literal in executable code) guards the
+# SUBSTRATE; the corpus is the injected content the substrate reasons over, so it
+# is excluded from the domain-literal check ONLY. The import checks still apply:
+# a case may not import governance/corpus either.
+_CORPUS_MARKER = ("eval", "panel", "cases")
+
+
+def _is_corpus(path: pathlib.Path) -> bool:
+    parts = path.parts
+    return all(m in parts for m in _CORPUS_MARKER)
+
 
 def test_there_are_python_files_to_check():
     assert PY_FILES, f"no package files found under {PKG}"
@@ -107,7 +120,14 @@ def _code_only(path: pathlib.Path) -> str:
 def test_no_domain_literal_in_code(path):
     """No corpus/domain literal is hard-coded in executable code. Comments,
     docstrings and the PROFILES render-vocabulary are labels, not logic, and are
-    allowed — they are excluded before the check."""
+    allowed — they are excluded before the check.
+
+    The ``eval/panel/cases/`` corpus is excluded too: those files are CaseSpec
+    DATA describing real domains (the injected content), not the corpus-free
+    engine.
+    """
+    if _is_corpus(path):
+        pytest.skip("panel case corpus is domain DATA by design, not engine code")
     code = _code_only(path).lower()
     hits = [lit for lit in DOMAIN_LITERALS if lit in code]
     assert not hits, f"{path.name} hard-codes domain literal(s) {hits} in code"
