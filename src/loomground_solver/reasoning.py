@@ -134,20 +134,30 @@ def compose_paths(
     max_depth: int = 3,
     min_confidence: float = 0.0,
     max_results: int = 200,
+    min_hops: int = 2,
 ) -> InferenceList:
     """Compose multi-hop paths into inferences.
 
     Walks directed paths (the object of one edge is the subject of the next),
-    up to ``max_depth`` edges, with no repeated node (acyclic). Only paths of
-    two or more hops produce an inference — a single edge is already a fact, not
-    a derivation. Results are pruned below ``min_confidence`` and returned
-    highest-confidence first, capped at ``max_results``.
+    up to ``max_depth`` edges, with no repeated node (acyclic). By default only
+    paths of two or more hops produce an inference — a single edge is already a
+    fact, not a derivation. Results are pruned below ``min_confidence`` and
+    returned highest-confidence first, capped at ``max_results``.
 
-    All three caps are configurable; the defaults (``max_depth=3``,
-    ``min_confidence=0.0``, ``max_results=200``) reproduce the historical output
-    exactly, so raising them is opt-in. On a real regulation's graph (thousands
-    of edges) the walk stays bounded in two ways so it never materialises an
-    exponential frontier:
+    ``min_hops`` (default ``2``) sets the shortest path that counts as a result;
+    it is clamped to ``>= 1``. The default reproduces the historical output
+    exactly (derivations only). Pass ``min_hops=1`` to *also* record direct
+    single-hop links — a lone edge ``src →[predicate]→ dst`` recorded as a
+    1-hop inference (dimension = the edge's own dimension, confidence = its
+    weight) — so a consumer wanting "direct edge, else composed path" makes one
+    bounded call instead of a shortcut plus a fallback. Raising ``min_hops``
+    above ``2`` reports only longer chains.
+
+    The other caps are configurable too; the defaults (``max_depth=3``,
+    ``min_confidence=0.0``, ``max_results=200``, ``min_hops=2``) reproduce the
+    historical output exactly, so changing them is opt-in. On a large graph
+    (thousands of edges) the walk stays bounded in two ways so it never
+    materialises an exponential frontier:
 
     * **Subtree pruning.** Confidence is the product of edge weights (each in
       ``[0, 1]``), so it is monotonically non-increasing along a path. Once the
@@ -169,6 +179,7 @@ def compose_paths(
 
     max_depth = max(2, int(max_depth))
     cap = max(0, int(max_results))
+    floor_hops = max(1, int(min_hops))
 
     # Bounded min-heap of the best-so-far inferences. Each entry is
     # ``(confidence, -seq, inference)``; ``seq`` is a per-walk discovery counter,
@@ -194,6 +205,7 @@ def compose_paths(
 
     def walk(node: str, visited: tuple[str, ...], path: list[Edge],
              dim: Optional[Dimension], conf: float) -> None:
+        nonlocal truncated
         if len(path) >= max_depth:
             return
         for e in adjacency.get(node, ()):
@@ -205,11 +217,27 @@ def compose_paths(
             else:
                 new_dim = compose(dim, e.dimension)          # left-fold
                 new_conf = compose_weights(conf, e.weight)
+            # ``new_conf`` is a monotone upper bound on every inference this
+            # subtree can yield: confidence is a product of edge weights in
+            # ``[0, 1]``, so every deeper path is ``<= new_conf``. Two prunes
+            # rest on that bound, and neither changes the result set — they
+            # only skip work that could not survive to the output:
+            if new_conf < min_confidence:
+                # Below the caller's floor; nothing deeper can rise to meet it.
+                continue
+            if cap > 0 and len(heap) >= cap and new_conf < heap[0][0]:
+                # Branch-and-bound: the best-of heap is full and this path
+                # already sits below its lowest retained confidence, so neither
+                # it nor any deeper path can displace a kept inference. Skipping
+                # the subtree is result-identical to walking it (every path in
+                # it would be recorded then immediately evicted) — but a
+                # qualifying path is being dropped, so raise the truncation
+                # signal exactly as that eviction would. This is what bounds the
+                # walk's *time*, not just its memory, on high-fan-out graphs.
+                truncated = True
+                continue
             new_path = path + [e]
-            if len(new_path) >= 2:
-                if new_conf < min_confidence:
-                    # Monotonic: deeper paths only drop further. Prune subtree.
-                    continue
+            if len(new_path) >= floor_hops:
                 _record(Inference(
                     subject=new_path[0].subject,
                     object=e.object,
@@ -223,10 +251,6 @@ def compose_paths(
                         "source_pair": h.source_pair,
                     } for h in new_path],
                 ))
-            elif new_conf < min_confidence:
-                # Single edge already below the floor; the product can only
-                # shrink, so nothing on this subtree can qualify.
-                continue
             walk(e.object, visited + (e.object,), new_path, new_dim, new_conf)
 
     starts = [start] if start is not None else list(adjacency.keys())
