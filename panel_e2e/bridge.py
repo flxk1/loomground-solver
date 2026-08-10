@@ -59,16 +59,36 @@ def ingest_case_text(case_id: str, text: str, store_root: str) -> dict[str, Any]
     return ingest_text(text, registry=registry, writer=writer)
 
 
-def norm_nodes(store_root: str) -> list[dict[str, Any]]:
-    """Persisted norm nodes, envelope re-keying undone (properties + node_id)."""
+def _nodes_of_kind(store_root: str, kind: str) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     for sub in load_dimensioned_subgraphs(store_root):
         for node in sub["nodes"]:
-            if node.get("node_type") == "norm":
+            if node.get("node_type") == kind:
                 rec = dict(node.get("properties") or {})
                 rec["id"] = node.get("node_id")
                 out.append(rec)
     return out
+
+
+def norm_nodes(store_root: str) -> list[dict[str, Any]]:
+    """Persisted norm nodes, envelope re-keying undone (properties + node_id)."""
+    return _nodes_of_kind(store_root, "norm")
+
+
+def validity_nodes(store_root: str) -> list[dict[str, Any]]:
+    """Persisted CONSTITUTIVE validity nodes (effect void/preserved/substitution)."""
+    return _nodes_of_kind(store_root, "validity")
+
+
+def comparable_acts(nodes: list[dict[str, Any]]) -> list[str]:
+    """The comparison surface of the persisted norms: each action with its
+    RECORDED deadline surface removed span-exact (L1(a)). Raises when a
+    recorded surface fails to anchor — never a silent skip."""
+    from .act_canon import trim_recorded_deadline
+    return sorted({
+        trim_recorded_deadline(str(n["action"]), n.get("deadline_surface"))
+        for n in nodes if n.get("action")
+    })
 
 
 def scenario_from_store(scenario_id: str, store_root: str) -> tuple[Scenario, list[str], list[dict]]:

@@ -19,14 +19,13 @@ choice, now a counted number).
 """
 
 ALIASES: dict[str, dict[str, str]] = {
-    "statute.gdpr.art33.breach_notification": {
-        # Same obligation, same level: the hand token names the act whose full
-        # surface (incl. the manner rider + embedded deadline text the ingester
-        # keeps today) is the ingested clause. Reviewed 2026-08-09.
-        "notify": ("notify the supervisory authority without undue delay and, "
-                   "where feasible, not later than 72 hours after having "
-                   "become aware of it,"),
-    },
+    # EMPTY since 2026-08-10 — and that is the point. The one entry this
+    # table ever held (gdpr: "notify" -> the full ingested clause) was
+    # retired by the Lane A levers landing together: the ingester records
+    # the deadline surface span (loomground-ingest#6), the pack publishes
+    # clause-level deadline cues, L1(a) trims span-exact, and the case
+    # authors the substantive rider-retained act. alias_count == 0 is the
+    # metric, not a vacancy.
 }
 
 NO_COUNTERPART: dict[str, dict[str, str]] = {
@@ -36,5 +35,20 @@ NO_COUNTERPART: dict[str, dict[str, str]] = {
             "ingested norms are substantive-level (§622 notice obligations). "
             "Different normative levels — an alias would equate a remedy with "
             "a duty. Reviewed 2026-08-09."),
+    },
+    "statute.bgb.para309.clause_blacklist": {
+        "disregard_void_clause": (
+            "remedy-level act (what the adjudicator does with the void "
+            "clause); the ingested nodes are VALIDITY-level constitutive "
+            "norms (§309: the term is void — drafter's disability, "
+            "counterparty's immunity). Different normative levels — an "
+            "alias would equate a remedy with a validity effect. "
+            "Reviewed 2026-08-10."),
+    },
+    "contract.music.para307.perpetual_buyout": {
+        "disregard_void_clause": (
+            "remedy-level act; the ingested nodes are VALIDITY-level "
+            "constitutive norms (§307 void / §306 preserved+substitution). "
+            "Same declared level-mismatch as bgb §309. Reviewed 2026-08-10."),
     },
 }

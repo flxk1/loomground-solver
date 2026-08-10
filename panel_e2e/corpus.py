@@ -4,9 +4,14 @@
 DeonticIngester can lower, run through the full pipeline with the FROZEN act
 identity contract, and scored.
 
-The scorecard's first-class metric (PO-locked): ``alias_count`` — the number
-of L2 human-declared act equivalences the corpus needs today. That number IS
-the extraction-coarseness debt; Lane A's go/no-go reads it directly.
+The scorecard's first-class metrics (PO-locked): ``alias_count`` (extraction
+coarseness), ``unlowered_count`` (texts the grammar refuses), and
+``no_counterpart_count`` (declared normative-level mismatches). ACCEPTANCE
+(Option A, accepted 2026-08-10) is stated with the debt visible on purpose:
+**4/4 e2e · aliases=0 · unlowered=0 · no_counterpart=3** — "4/4" does NOT
+mean zero debt; the three remedy-level hand acts are a counted, deferred
+design item, and aliasing them across normative levels would be the exact
+meaning-inference this contract rejects.
 """
 from __future__ import annotations
 
@@ -50,8 +55,11 @@ def run_corpus() -> dict[str, Any]:
         e2e = res["lanes"]["e2e"]
         entry: dict[str, Any] = {
             "e2e": e2e.get("status"),
+            "level": e2e.get("level"),
             "staged": res["lanes"].get("staged", {}).get("overall"),
             "replay_from_versum": e2e.get("replay_from_versum"),
+            "validity_effects": sorted(v.get("effect") or ""
+                                       for v in e2e.get("validity_nodes", [])),
             "fallback_stages": res["lanes"].get("staged", {}).get("in_process_fallback_stages", []),
             "acts": [],
         }
@@ -60,7 +68,9 @@ def run_corpus() -> dict[str, Any]:
             entry["reason"] = e2e.get("reason")
             report["cases"][case.id] = entry
             continue
-        ingested_acts = sorted((e2e.get("acts") or {}).keys())
+        # The comparison surface: persisted actions with their RECORDED
+        # deadline surface trimmed span-exact (L1(a)); [] at validity level.
+        ingested_acts = list(e2e.get("comparable_acts") or [])
         aliases = ALIASES.get(case.id, {})
         no_cp = NO_COUNTERPART.get(case.id, {})
         for hand in hand_acts(case):
@@ -94,6 +104,11 @@ if __name__ == "__main__":
     import sys
     rep = run_corpus()
     print(json.dumps(rep, indent=1, ensure_ascii=False, default=str))
-    print(f"CORPUS: {rep['verdict']} — aliases={rep['alias_count']} · no_counterpart={rep['no_counterpart_count']} · unlowered={rep['unlowered_count']} (the Lane A numbers), "
-          f"unmatched={rep['unmatched']}")
+    levels = [c.get("level") for c in rep["cases"].values()]
+    passed = sum(1 for c in rep["cases"].values() if c["e2e"] == "PASS")
+    print(f"CORPUS: {rep['verdict']} — e2e {passed}/{len(rep['cases'])} "
+          f"(derivation {levels.count('derivation')}, validity {levels.count('validity')}) · "
+          f"aliases={rep['alias_count']} · unlowered={rep['unlowered_count']} · "
+          f"unmatched={rep['unmatched']} · "
+          f"no_counterpart={rep['no_counterpart_count']} (deferred design debt — counted, not zero)")
     sys.exit(0 if rep["verdict"] == "PASS" else 1)
