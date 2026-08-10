@@ -125,9 +125,9 @@ CASE = CaseSpec(
             grounding=Grounding.span("notification_duty", "GDPR Art 33(1)"),
             warrant="Art 33 duty (rank 5) defeats a trade-secret prohibition (rank 1)",
             dimension="intentional",
-            norms=[("notify", "obligatory", "GDPR Art 33", 0, 5),
-                   ("notify", "prohibited", "trade_secret_clause", 0, 1)],
-            act="notify", pack="lex",   # lex-superior resolves → obligatory → SATISFIED
+            norms=[("notify the supervisory authority without undue delay", "obligatory", "GDPR Art 33", 0, 5),
+                   ("notify the supervisory authority without undue delay", "prohibited", "trade_secret_clause", 0, 1)],
+            act="notify the supervisory authority without undue delay", pack="lex",   # lex-superior resolves → obligatory → SATISFIED
         ),
     ),
     probes=(
@@ -138,9 +138,9 @@ CASE = CaseSpec(
                 name="collision",
                 grounding=Grounding.span("collision", "GDPR Art 33 vs NDA"),
                 warrant="two contradictory norms on the same act, no ordering",
-                norms=[("notify", "obligatory", "GDPR Art 33"),
-                       ("notify", "prohibited", "trade_secret_clause")],
-                act="notify", pack="generic"),),
+                norms=[("notify the supervisory authority without undue delay", "obligatory", "GDPR Art 33"),
+                       ("notify the supervisory authority without undue delay", "prohibited", "trade_secret_clause")],
+                act="notify the supervisory authority without undue delay", pack="generic"),),
         ),
         Probe(
             kind="presupposed_fact",

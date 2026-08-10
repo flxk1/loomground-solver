@@ -11,10 +11,13 @@ src/loomground_solver/ so the solver's purity invariant
 other plane; this package imports all of them.
 
 Honest scope (load-bearing): only what DeonticIngester actually lowers goes
-end-to-end. Stages it does not lower yet (intentional / structural /
-quantitative constructions) run in-process and are MARKED in_process_fallback
-in every result — an honest gap and a backlog item, never faked as
-reconstructed.
+end-to-end. Results carry a LEVEL: ``derivation`` (conduct norms — full
+reconstruct → derive → capture → replay-from-versum) or ``validity``
+(constitutive validity nodes — void/preserved/substitution persisted and
+reconstructed; nothing to derive, and the result says so). Stages the
+ingester does not lower yet (intentional / structural / quantitative
+constructions) run in-process and are MARKED in_process_fallback in every
+result — an honest gap and a backlog item, never faked as reconstructed.
 
 Running (not collected by CI: pytest testpaths = ["tests"], and the sibling
 planes are not solver dependencies — the purity invariant, again): install
