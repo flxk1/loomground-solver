@@ -2,6 +2,14 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.3.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.2.0...solver-v0.3.0) (2026-08-09)
+
+
+### Features
+
+* graded panel — DoD acceptance over statutes/contracts/policies ([2f0c9f4](https://github.com/flxk1/loomground-solver/commit/2f0c9f4cd975d929e07245f773074ac9341cb1f8))
+* scale compose_paths for large regulation graphs ([#9](https://github.com/flxk1/loomground-solver/issues/9)) ([8bfbf44](https://github.com/flxk1/loomground-solver/commit/8bfbf44850626acd0c4a9710b2b7aae1d2094032))
+
 ## [0.2.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.1.3...solver-v0.2.0) (2026-08-02)
 
 
