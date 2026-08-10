@@ -2,6 +2,14 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.4.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.3.0...solver-v0.4.0) (2026-08-10)
+
+
+### Features
+
+* panel_e2e — end-to-end deontic lane over the real planes ([5500498](https://github.com/flxk1/loomground-solver/commit/5500498eec69aefbc145b27271758f19a87865cb))
+* validity-level e2e + span-exact deadline trim (aliases -&gt; 0) ([696d7d4](https://github.com/flxk1/loomground-solver/commit/696d7d453eaa632b9dbc8f27179489efd50ab796))
+
 ## [0.3.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.2.0...solver-v0.3.0) (2026-08-09)
 
 
