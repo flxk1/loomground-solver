@@ -25,7 +25,8 @@ from loomground_solver.eval.panel.runner import run_case
 from loomground_solver.replay import verify_trace
 from loomground_solver.scenario import Scenario, derive
 
-from .bridge import ingest_case_text, scenario_from_store
+from .bridge import (comparable_acts, ingest_case_text, scenario_from_store,
+                     validity_nodes)
 
 # Stage kinds the DeonticIngester lowers today: only the deontic resolution
 # itself. Every other construction is an honest in-process fallback and a
@@ -76,16 +77,34 @@ def run_case_e2e(case) -> dict[str, Any]:
         result["lanes"]["e2e"] = lane
         return result
     scenario, gaps, nodes = scenario_from_store("e2e:" + case.id, store)
+    vnodes = validity_nodes(store)
     lane["norm_nodes"] = len(nodes)
+    lane["validity_nodes"] = [{"effect": v.get("effect"),
+                               "incident": v.get("incident"),
+                               "correlative": v.get("correlative")}
+                              for v in vnodes]
     lane["reconstruction_gaps"] = gaps
     if not nodes:
+        if vnodes:
+            # No conduct norms, but CONSTITUTIVE validity norms persisted
+            # and reloaded from the store: the text lowers at the VALIDITY
+            # level (void-clause prose). Nothing to derive or replay — the
+            # e2e claim is persistence + reconstruction, honestly labelled.
+            lane["level"] = "validity"
+            lane["status"] = "PASS"
+            lane["comparable_acts"] = []
+            result["lanes"]["e2e"] = lane
+            return result
         # Ingest succeeded but extracted no norms: the text does not lower
-        # under the deontic grammar (e.g. void-clause prose with no O/P/F
-        # modal cue). Coverage ABSENCE, honestly distinct from breakage.
+        # under the deontic grammar (e.g. prose with neither an O/P/F modal
+        # nor a validity cue). Coverage ABSENCE, honestly distinct from
+        # breakage.
         lane["status"] = "UNLOWERED"
         lane["reason"] = "text carries no norms the deontic grammar lowers — a coverage gap, not a failure"
         result["lanes"]["e2e"] = lane
         return result
+    lane["level"] = "derivation"
+    lane["comparable_acts"] = comparable_acts(nodes)
     if not scenario.norms:
         lane["status"] = "FAIL"
         lane["reason"] = "norm nodes persisted but none reconstructed — gaps are the signal"

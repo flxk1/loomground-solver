@@ -6,14 +6,16 @@ Act identity is either MECHANICALLY EXACT or HUMAN-DECLARED, never inferred.
 
 L1 ``canonical_act(text)``: purely mechanical — Unicode NFC, lowercase,
 collapse whitespace, strip leading articles, strip trailing punctuation.
-DELIBERATELY NO deadline-text removal (freeze refinement, 2026-08-09): the
-ingester persists only the deadline's matched VALUE, not its surface span, so
-span-exact removal is impossible from persisted data and substring re-search
-would be a mini-inference that can over/under-remove. Until the ingester
-records the span (a named Lane A item that will measurably shrink the alias
-table), the deadline-clause difference rides in the alias — coarser, honest,
-counted. Manner riders ("without undue delay") are MEANING — a standard of
-conduct — and are likewise never stripped.
+
+L1(a) ``trim_recorded_deadline(action, surface)``: the anticipated amendment
+(2026-08-10, after loomground-ingest#6 + the pack's clause-level deadline
+cues) — the deadline clause is removed SPAN-EXACT using the surface the
+ingester RECORDED at ingest time (``deadline_surface``: full published-cue
+match, action-anchored offsets). The anchor is verified before cutting
+(``action[start:end] == text``) and the function refuses loudly otherwise —
+no re-search, no fuzzy cut, no removal when nothing was recorded. Manner
+riders ("without undue delay") are MEANING — a standard of conduct — and are
+never stripped.
 
 L2 ``acts_match(hand, ingested, aliases)``: if L1 forms differ, the ONLY path
 to a match is an explicit, case-scoped alias (hand act → expected canonical
@@ -40,6 +42,25 @@ def canonical_act(text: str) -> str:
     s = _WS.sub(" ", s).strip()
     s = _ARTICLES.sub("", s)
     return s.strip(" ,.;:")
+
+
+def trim_recorded_deadline(action: str, surface: dict | None) -> str:
+    """L1(a) — span-exact removal of the RECORDED deadline surface.
+
+    Anchored and verified, never searched: the recorded surface must
+    reproduce exactly at its recorded offsets or this refuses loudly.
+    Returns the action unchanged when no surface was recorded."""
+    if not surface:
+        return action
+    start, end, text = surface.get("start"), surface.get("end"), surface.get("text")
+    if not (isinstance(start, int) and isinstance(end, int)
+            and isinstance(text, str) and text):
+        raise ValueError(f"malformed deadline_surface: {surface!r}")
+    if action[start:end] != text:
+        raise ValueError(
+            "deadline_surface does not anchor: "
+            f"action[{start}:{end}] == {action[start:end]!r} != {text!r}")
+    return action[:start] + action[end:]
 
 
 def acts_match(hand_act: str, ingested_act: str, *,
