@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loomground-solver"
-version = "0.3.0"
+version = "0.4.0"
 description = "Universal reasoning substrate: 5D dimensioned edges, defeasible reasoning contract, solver topology. No governance, no corpus — both injected through ports."
 readme = "README.md"
 requires-python = ">=3.10"
