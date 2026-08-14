@@ -30,4 +30,4 @@ probability or value, if wrong, flips the recommendation. Replayable.
 ## Pairing
 
 Consumes `estimate-liability` and `probability-tracker`. A dispute that turns on a governance rule
-hands off to the separately licensed RVND governance package.
+hands off to the separately licensed host governance package.

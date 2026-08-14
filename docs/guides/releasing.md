@@ -1,11 +1,11 @@
 # Ecosystem release and version administration
 
 Loomground is the shared language and contract upstream. Solver and Versum are
-sibling implementations of that contract. RVND is the governed product that
+sibling implementations of that contract. host is the governed product that
 integrates both.
 
 ```text
-loomground-governance ─┬─> loomground-solver ─┬─> rvnd
+loomground-governance ─┬─> loomground-solver ─┬─> host
                      └─> versum ────────┘
 ```
 
@@ -29,9 +29,9 @@ contradiction:
 - `main` is the ecosystem integration line. Nightly and pull-request
   conformance runs test every tool against the current Loomground `main`.
 - A stable release is immutable. Solver and Versum releases consume a published
-  compatible `loomground-governance` version; RVND consumes published compatible
+  compatible `loomground-governance` version; host consumes published compatible
   Solver and Versum versions.
-- Libraries declare compatible ranges. RVND deployment locks the exact resolved
+- Libraries declare compatible ranges. host deployment locks the exact resolved
   versions.
 - A release is promoted only after the downstream compatibility suite passes.
 
@@ -41,7 +41,7 @@ Example release metadata:
 # Solver and Versum
 dependencies = ["loomground-governance>=0.8,<0.9"]
 
-# RVND
+# host
 dependencies = [
   "loomground-governance>=0.8,<0.9",
   "loomground-solver>=0.1,<0.2",
@@ -49,13 +49,13 @@ dependencies = [
 ]
 ```
 
-Example RVND deployment lock:
+Example host deployment lock:
 
 ```text
 loomground-governance==0.8.2
 loomground-solver==0.1.3
 loomground-versum==0.6.4
-rvnd==0.6.8.2
+host==0.6.8.2
 ```
 
 ## Automated administration
@@ -88,14 +88,14 @@ On the release tag, GitHub Actions must:
 6. retain build provenance and attestations.
 
 Production publication must use a protected GitHub environment named `pypi`
-and pass the RVND governance lane. No long-lived PyPI API token belongs in the
+and pass the host governance lane. No long-lived PyPI API token belongs in the
 repository.
 
 ### 3. Dependency propagation
 
 Enable Dependabot for the `pip` and `github-actions` ecosystems. A newly
 published Loomground version then opens dependency PRs in Solver and Versum; new
-Solver and Versum versions open PRs in RVND. Configure
+Solver and Versum versions open PRs in host. Configure
 `versioning-strategy: increase-if-necessary` so compatible ranges are not
 rewritten unnecessarily.
 
@@ -107,7 +107,7 @@ major updates require human approval.
 
 A Loomground release is not ecosystem-complete merely because its own tests
 pass. After publishing it, dispatch compatibility runs in Solver and Versum.
-After both publish compatible releases, dispatch RVND's integration suite.
+After both publish compatible releases, dispatch host's integration suite.
 
 Use a GitHub App with narrowly scoped access for cross-repository dispatch. Do
 not use a personal access token. Keep the promotion state visible through one
@@ -116,9 +116,9 @@ compatibility matrix:
 | Component | Released line | Loomground contract | Downstream gate |
 | --- | --- | --- | --- |
 | Loomground language | `0.8.x` | `0.8` | Solver + Versum |
-| Solver | `0.1.x` | `0.8` | RVND |
-| Versum | `0.1.x` | `0.8` | RVND |
-| RVND | `0.1.x` | `0.8` | deployment smoke test |
+| Solver | `0.1.x` | `0.8` | host |
+| Versum | `0.1.x` | `0.8` | host |
+| host | `0.1.x` | `0.8` | deployment smoke test |
 
 ## Release order
 
@@ -126,8 +126,8 @@ compatibility matrix:
 2. Merge the Loomground release PR and publish `loomground-governance`.
 3. Accept the generated dependency PRs in Solver and Versum after conformance.
 4. Merge their release PRs and publish both packages.
-5. Accept the generated Solver and Versum dependency PRs in RVND.
-6. Regenerate RVND's lock file, run the integration suite and publish RVND.
+5. Accept the generated Solver and Versum dependency PRs in host.
+6. Regenerate host's lock file, run the integration suite and publish host.
 7. Advance development versions on `main` and continue nightly conformance.
 
 ## Required branch protection
@@ -157,7 +157,7 @@ Already in the design:
 - PyPI Trusted Publishing avoids permanent repository credentials;
 - a protected GitHub environment retains publication approval;
 - dependency upgrades arrive as visible, tested pull requests; and
-- RVND locks the exact versions used in deployment.
+- host locks the exact versions used in deployment.
 
 ### Required hardening
 
@@ -213,7 +213,7 @@ Every release record should contain:
 
 #### Protect release administration
 
-Apply RVND policy and branch protection to at least:
+Apply host policy and branch protection to at least:
 
 ```text
 /pyproject.toml
@@ -223,7 +223,7 @@ Apply RVND policy and branch protection to at least:
 ```
 
 Changes to public contracts, version policy and publishing authority must pass
-the automated RVND release policy.
+the automated host release policy.
 
 ## Alternatives
 
@@ -246,7 +246,7 @@ independent Python libraries.
 Release Please is a better fit for Loomground's multi-repository contract chain
 because it makes the proposed version and changelog visible before the release
 exists. That review point matters when a language change may propagate through
-Solver, Versum and RVND.
+Solver, Versum and host.
 
 ## Recommended target state
 
@@ -275,7 +275,7 @@ protected PyPI Trusted Publishing
 tested dependency pull requests in downstream repositories
         |
         v
-exact RVND deployment lock
+exact host deployment lock
 ```
 
 Release Please administers the process. Compatibility gates and reviewers retain

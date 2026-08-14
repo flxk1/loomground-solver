@@ -2,7 +2,7 @@
 # Copyright 2026 flxk1
 """Tests for the 5D reasoning engine (loomground_solver.reasoning).
 
-Ported verbatim from RVND tests/test_reasoning.py; imports remapped
+Ported verbatim from host tests/test_reasoning.py; imports remapped
 workspaces.dimensions/reasoning -> loomground_solver.dimensions/reasoning.
 """
 
