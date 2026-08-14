@@ -1,4 +1,4 @@
-"""Compatibility surface retained for the earlier engine after extracting Solver."""
+"""Compatibility surface retained for host after extracting Solver."""
 
 import importlib
 
