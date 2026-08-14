@@ -81,7 +81,7 @@ conditional compositions. It does not decide effective force, normative
 priority or defeat.
 
 Solver decodes installed schemas and performs adjudicative reasoning. Polarity
-is never automatically translated into attack. RVND or another host owns
+is never automatically translated into attack. host or another host owns
 authorization, assurance and normative priority.
 
 ## Consequences

@@ -38,4 +38,4 @@ an `ESCALATE` rather than a guess. Signed and replayable.
 ## Pairing
 
 This skill reasons under uncertainty and feeds `strategic-analysis` and `probability-tracker`.
-Questions of obligation hand off to the separately licensed RVND governance package.
+Questions of obligation hand off to the separately licensed host governance package.

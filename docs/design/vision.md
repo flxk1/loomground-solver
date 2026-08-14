@@ -75,8 +75,8 @@ Nothing here is collapsed or paraphrased away. Companion to the
     decision space. `decision_space()` returns `{accepted, undecided, rejected}`:
     `accepted` = auto-safe, `undecided` = the *only* set the LLM/human may choose
     within, `rejected` = invalid/defeated with reasons. Non-determinism is **fenced
-    by construction** — the seam RVND's verdict engine consumes.
-17. **Productizing #1 without building a corpus.** RVND's **Ed25519 signed audit
+    by construction** — the seam host's verdict engine consumes.
+17. **Productizing #1 without building a corpus.** host's **Ed25519 signed audit
     chain** already records every governed run (generator proposed → solver
     verified → verdict). That signed chain *is* the labeled, replayable dataset.
     Add **one export** (verified traces → training pairs), feed Versum's local
@@ -168,10 +168,10 @@ mathematics, data science**. Built as the open `METHODS` registry (rule-nD,
 34. **No RAG.** "We will not build another stupid RAG." `distance()` is a cheap
     recall filter only — never a trust signal, never the reasoning.
 35. **Universal, standalone.** One solver — epistemic *or* rules *or* whatever —
-    that both the 5D+nD Graph (Versum) and RVND **import without owning**;
+    that both the 5D+nD Graph (Versum) and host **import without owning**;
     governance and corpus arrive only through injected ports. The
     dependency-inversion gate passing *is* the definition of "universal."
-36. **RVND imports it and loses no functionality**; the KG imports the same package
+36. **host imports it and loses no functionality**; the KG imports the same package
     symmetrically.
 37. **Work in the folder. No archives** — no tarballs.
 
@@ -179,7 +179,7 @@ mathematics, data science**. Built as the open `METHODS` registry (rule-nD,
 
 ## Build status (honest, at time of writing)
 
-Green build: **269 solver tests + 10 RVND-integration tests**, all passing; the
+Green build: **269 solver tests + 10 host-integration tests**, all passing; the
 dependency-inversion gate (universality) still green with every addition below.
 
 Built this row (supervised loops, each verified, then adversarially reviewed):
@@ -202,7 +202,7 @@ Built this row (supervised loops, each verified, then adversarially reviewed):
   `complete` requires the whole structure pinned (determinacy 1.0), never merely
   "nothing escalated."
 - **#1 — the data-pump productization (12, 17).** `adapters_rvnd/datapump_rvnd.py`
-  (RVND side, not the universal core): reads the Ed25519 signed audit chain, maps
+  (host side, not the universal core): reads the Ed25519 signed audit chain, maps
   events to `harvest` records, re-checks signatures, and emits training data + an
   **autonomy-graded** swap proposal (only an autonomous grade auto-applies; the
   default grade escalates). Injectable chain-reader + verifier; proven against a

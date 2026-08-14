@@ -4,7 +4,7 @@
 
 Two jobs: exercise the generic mechanism (validation, compose, left-fold,
 escalation, inverse, dimension), and prove — with a legal-shaped table — that it
-reproduces the behaviour of the domain algebra it replaces (RVND's
+reproduces the behaviour of the domain algebra it replaces (host's
 ``legal_connection``), so moving the engine into the solver is behaviour-
 preserving and only the *data* stays in the domain plane.
 """
@@ -107,7 +107,7 @@ def test_inverse_and_dimension_defaults():
 
 # ── behaviour-preservation vs the legal_connection algebra ────────
 # A legal-shaped algebra: the mechanism must reproduce the domain laws that used
-# to live in RVND's legal_connection (LC-2 subjection, LC-3/LC-4 escalation,
+# to live in host's legal_connection (LC-2 subjection, LC-3/LC-4 escalation,
 # transitivity), proving the retirement is behaviour-preserving.
 
 def _legal_algebra() -> RelationAlgebra:

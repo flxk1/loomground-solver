@@ -59,7 +59,7 @@ builds the source distribution and wheel once, and publishes them using
 [PyPI Trusted Publishing](https://docs.pypi.org/trusted-publishers/) — an OIDC
 exchange (`id-token: write`) instead of a long-lived API token stored in the
 repository. Publication runs only inside the protected `pypi` GitHub environment and
-must pass the RVND governance lane before anything reaches PyPI.
+must pass the host governance lane before anything reaches PyPI.
 
 ## Ecosystem release order (reference only — not required by this repository alone)
 
@@ -71,7 +71,7 @@ contract. When a change needs to reach the whole ecosystem, the usual order is:
 2. This repository picks up the new version through its own Dependabot pull request,
    gated by its own conformance suite.
 3. This repository cuts its own release once the dependency update passes.
-4. Downstream consumers (for example, RVND) pick up the new `loomground-solver`
+4. Downstream consumers (for example, host) pick up the new `loomground-solver`
    version through their own dependency pull requests.
 
 This repository's own release does not wait on that downstream propagation; it is

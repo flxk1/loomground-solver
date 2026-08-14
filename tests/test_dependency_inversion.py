@@ -3,7 +3,7 @@
 """The definition of 'universal': no file under loomground_solver/ may import
 governance or corpus, and no file may hard-code a domain literal in its code.
 
-This mirrors RVND's own tests/test_dependency_inversion.py philosophy: the
+This mirrors host's own tests/test_dependency_inversion.py philosophy: the
 substrate stays pure by construction, and a green run here is the machine-checked
 proof of it. Governance and corpus arrive only through the injected ports.
 
