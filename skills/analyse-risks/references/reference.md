@@ -31,4 +31,4 @@ Replayable.
 ## Pairing
 
 Consumes `probability-tracker` for evidence-based likelihoods. A risk that is really a rule
-violation hands off to the separately licensed RVND governance package.
+violation hands off to the separately licensed host governance package.

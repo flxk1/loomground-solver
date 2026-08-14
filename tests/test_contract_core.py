@@ -2,12 +2,12 @@
 # Copyright 2026 flxk1
 """Reasoning contract — the governance-free core (loomground_solver.contract).
 
-Ported from RVND tests/test_reasoning_contract.py, keeping ONLY the tests that
+Ported from host tests/test_reasoning_contract.py, keeping ONLY the tests that
 exercise the pure contract (check_case / required_oversight / check_export with
 an injected classifier). The module-level imports of workspaces.problem_kg,
 legal_corpus, decision_surface, rule_registry and policy are dropped; only
 ``loomground_solver.contract`` is imported. See the module docstring's SKIPPED
-list for the tests intentionally left in the RVND shim layer.
+list for the tests intentionally left in the host shim layer.
 
 SKIPPED (need a real corpus registry / folder policy — deferred to the shim):
   * test_build_case_enforces_the_contract  — needs registry + problem_kg.build_case

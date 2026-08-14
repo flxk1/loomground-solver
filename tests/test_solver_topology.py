@@ -2,7 +2,7 @@
 # Copyright 2026 flxk1
 """Validated solver topology (loomground_solver.topology).
 
-Ported verbatim from RVND tests/test_solver_topology.py; imports remapped
+Ported verbatim from host tests/test_solver_topology.py; imports remapped
 workspaces.solver_topology -> loomground_solver.topology and
 workspaces.kg_export.validate_graph -> loomground_solver._projection.validate_graph.
 """

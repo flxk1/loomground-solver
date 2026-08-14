@@ -2,7 +2,7 @@
 # Copyright 2026 flxk1
 """Tests for the five-dimensional edge model (loomground_solver.dimensions).
 
-Ported verbatim from RVND tests/test_dimensions.py; only the import path is
+Ported verbatim from host tests/test_dimensions.py; only the import path is
 remapped workspaces.dimensions -> loomground_solver.dimensions.
 """
 
