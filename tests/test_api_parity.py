@@ -1,4 +1,4 @@
-"""Compatibility surface retained for RVND after extracting Solver."""
+"""Compatibility surface retained for host after extracting Solver."""
 
 import importlib
 

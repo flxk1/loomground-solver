@@ -2,8 +2,8 @@
 # Copyright 2026 flxk1
 """Versum adapter + governance-injection tests. The Versum NormSource lets the KG
 drive the solver; the governance test uses a plain fake Governance (no host tool),
-so it stays a pure test of the core contract's judgment floor. RVND-specific
-adapter tests live in the RVND repo's loomground-solver-integration/, not here."""
+so it stays a pure test of the core contract's judgment floor. host-specific
+adapter tests live in the host repo's loomground-solver-integration/, not here."""
 from __future__ import annotations
 
 import csv

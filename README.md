@@ -1,10 +1,10 @@
 # loomground-solver
 
 A universal reasoning and decision kernel, packaged standalone so that both a
-knowledge graph (the 5D+nD Versum) and a governance layer (RVND) can **import it
+knowledge graph (the 5D+nD Versum) and a governance layer (host) can **import it
 without owning it**. Governance and corpus arrive only through injected ports, so
 the same kernel runs unchanged as the graph's derived-truth layer, as a standalone
-path-solver that writes nothing, and as RVND's clamped verdict instance.
+path-solver that writes nothing, and as host's clamped verdict instance.
 
 The runtime is standard-library-only apart from the data-only
 `loomground-governance` package, consumed from
@@ -65,7 +65,7 @@ The kernel is a **verifier + structured world model**, not a retriever. A genera
 
 The [vision](docs/design/vision.md) states the intent this code serves; the
 [operations guide](docs/guides/operations.md) explains how to run it
-and wire it into RVND and Versum.
+and wire it into host and Versum.
 
 ## Install and prove it
 
@@ -79,7 +79,7 @@ The two load-bearing gates:
 - `tests/test_dependency_inversion.py` — the package imports **no** governance and
   **no** domain module, and carries no domain literal in executable code. **This
   passing is the definition of "universal."**
-- `tests/test_api_parity.py` — every public symbol the RVND modules exposed is
+- `tests/test_api_parity.py` — every public symbol the host modules exposed is
   re-exported by the matching package module.
 
 ## Use

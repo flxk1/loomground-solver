@@ -8,7 +8,7 @@ reads them a year from now, not the build session that produced them. This
 script enforces that register on every tracked ``*.py`` and ``*.md`` file by
 failing on lines that carry:
 
-- a plan/milestone citation (``SOLVER-PLAN``, ``VERSUM-PLAN``, ``RVND-PLAN``,
+- a plan/milestone citation (``SOLVER-PLAN``, ``VERSUM-PLAN``, ``host-PLAN``,
   a bare ``loomground-ref``, a ``J<n>-ratified`` label, or a ``ruling X'``
   citation) instead of stating the invariant itself;
 - a private fork path (``flxk1/solver``, ``flxk1/versum``, or a
@@ -35,7 +35,7 @@ EXCLUDED_DIRS = ("LICENSES/", "build/", "dist/")
 EXCLUDED_PATH_PARTS = ("/fixtures/", "claim_axes_vectors")
 
 PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("plan citation", re.compile(r"\b(?:SOLVER|VERSUM|RVND)-PLAN\b")),
+    ("plan citation", re.compile(r"\b(?:SOLVER|VERSUM|host)-PLAN\b")),
     ("plan citation", re.compile(r"\bloomground-ref\b")),
     ("private fork path", re.compile(r"flxk1/solver\b")),
     ("private fork path", re.compile(r"flxk1/versum\b")),

@@ -164,7 +164,7 @@ from .precedent_ratio import (
     RatioElement, RatioProposal, RatioResult, extract_ratio,
 )
 
-# phases — Gutachtenstil phase ordering + briefs (presentation; RVND-parity surface)
+# phases — Gutachtenstil phase ordering + briefs (presentation; host-parity surface)
 from .phases import PHASE_ORDER, brief, curriculum, all_briefs
 
 # structural_construction — [I]-tier factual harness: text → ontology (Dimension.STRUCTURAL) | ESCALATE
@@ -359,7 +359,7 @@ __all__ = [
     "Element", "NormProposal", "ConstructionResult", "construct_norm",     # O26
     "ReadingResult", "canon_prompt", "interpret_element",                   # O36–O45
     "RatioElement", "RatioProposal", "RatioResult", "extract_ratio",        # O143
-    # phases — Gutachtenstil phase ordering + briefs (RVND-parity surface)
+    # phases — Gutachtenstil phase ordering + briefs (host-parity surface)
     "PHASE_ORDER", "brief", "curriculum", "all_briefs",
     # structural_construction — [I]-tier factual harness (Dimension.STRUCTURAL)
     "Concept", "HierarchyEdge", "StructuralResult", "construct_structure",

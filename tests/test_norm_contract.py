@@ -2,7 +2,7 @@
 # Copyright 2026 flxk1
 """Tests for the norm-theory contract (loomground_solver.norm_contract).
 
-Ported verbatim from RVND tests/test_norm_contract.py; import remapped
+Ported verbatim from host tests/test_norm_contract.py; import remapped
 workspaces.norm_contract -> loomground_solver.norm_contract.
 """
 

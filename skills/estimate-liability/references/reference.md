@@ -28,5 +28,5 @@ decision space. Replayable.
 
 ## Pairing
 
-Consumes `probability-tracker`. Its probabilistic estimate can feed the separately licensed RVND
+Consumes `probability-tracker`. Its probabilistic estimate can feed the separately licensed host
 governance package when a rule's triggering conditions turn on a likelihood.
