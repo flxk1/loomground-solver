@@ -247,6 +247,7 @@ from .epistemic_status import (
     RootCauseReport, root_causes,
 )
 from .oversight import BriefItem, OversightBrief, oversight_brief
+from .collapse import ConstituentState, Constituent, state_to_verdict, collapse
 from .falsifiability import (
     Falsifiability, SUPPORT_FLOOR, Evidence,
     rank, best_support, support_verdict, fold_support,
@@ -399,6 +400,8 @@ __all__ = [
     "RootCauseReport", "root_causes",
     # oversight — the bounded brief (selects; decides nothing)
     "BriefItem", "OversightBrief", "oversight_brief",
+    # collapse — a conjunction where any term at its floor collapses the whole
+    "ConstituentState", "Constituent", "state_to_verdict", "collapse",
     # falsifiability — rank evidence by how it could be shown wrong
     "Falsifiability", "SUPPORT_FLOOR", "Evidence",
     "rank", "best_support", "support_verdict", "fold_support",
