@@ -244,6 +244,7 @@ from .epistemic_status import (
     EpistemicStatus, SETTLED, UNSETTLED, is_settled, is_unsettled,
     status_to_verdict, StatusedPremise,
     propagate_premises, propagate_under_condition, propagate_derivation,
+    RootCauseReport, root_causes,
 )
 
 # methods — the open family of reasoning methods (rule-nD)
@@ -390,6 +391,7 @@ __all__ = [
     "EpistemicStatus", "SETTLED", "UNSETTLED", "is_settled", "is_unsettled",
     "status_to_verdict", "StatusedPremise",
     "propagate_premises", "propagate_under_condition", "propagate_derivation",
+    "RootCauseReport", "root_causes",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
