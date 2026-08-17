@@ -247,6 +247,10 @@ from .epistemic_status import (
     RootCauseReport, root_causes,
 )
 from .oversight import BriefItem, OversightBrief, oversight_brief
+from .falsifiability import (
+    Falsifiability, SUPPORT_FLOOR, Evidence,
+    rank, best_support, support_verdict, fold_support,
+)
 
 # methods — the open family of reasoning methods (rule-nD)
 from .methods import METHODS, register_method, method, methods_by_kind
@@ -395,6 +399,9 @@ __all__ = [
     "RootCauseReport", "root_causes",
     # oversight — the bounded brief (selects; decides nothing)
     "BriefItem", "OversightBrief", "oversight_brief",
+    # falsifiability — rank evidence by how it could be shown wrong
+    "Falsifiability", "SUPPORT_FLOOR", "Evidence",
+    "rank", "best_support", "support_verdict", "fold_support",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
