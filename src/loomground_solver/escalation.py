@@ -17,8 +17,8 @@ properties a weighted sum lacks:
 it. Nothing compensates for anything.
 
 *Attributable.* There is always a factor that is doing the capping, and it can be
-named. "Autonomy 0.34" cannot be acted on; "capped at CONFIRM by reversibility"
-can — it says what would have to change.
+named. "Autonomy 0.34" cannot be acted on; "capped by reversibility" can — it
+says what would have to change.
 
 *Fail-closed.* A factor nobody assessed caps at the floor. Not knowing how
 uncertain a situation is is not the same as it being certain, and an unassessed
@@ -26,10 +26,15 @@ factor that silently dropped out of the minimum would read as an unconstrained
 one. This is the difference between the calculus being conservative and the
 calculus being decorative.
 
-**The ceilings are the caller's policy.** This module ships the ladder and the
-fold; which factor caps where is a judgement about a deployment, and the kernel
-holds no deployments. A table saying "high risk → CONFIRM" is a policy claim and
-belongs to whoever can be held to it. Consequently no factor is named here.
+**The ladder is the caller's, and so are the ceilings.** This module ships the
+comparison and the fold; it ships no levels. That is not fastidiousness — the
+governance language already owns this ladder and already publishes it as
+remappable data, saying so in as many words: *policy supplies the levels, their
+meanings, and their order; the language owns only the comparison rule.* A second
+ladder here would be a divergent copy of a thing that already exists, in the layer
+that holds no deployments. A host reads its levels from wherever it keeps its
+policy and hands them in as a :class:`Ladder`. Which factor caps where is the same
+kind of claim, and is likewise the caller's; consequently no factor is named here.
 
 **The calculus only ever lowers.** :func:`ceiling` cannot return more than was
 delegated, and it cannot return more than the factors permit. Autonomy is restored
@@ -43,44 +48,63 @@ Pure stdlib. No governance, no corpus, no domain.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import Iterable, Optional, Sequence, Tuple
 
 from .cross_subsumption import Verdict
 from .issue_aggregation import IssueAggregate, aggregate_issues
 
 __all__ = [
-    "Autonomy", "FLOOR", "Factor", "Escalation",
+    "Ladder", "Factor", "Escalation",
     "ceiling", "autonomy_verdict", "fold_autonomy", "relax",
 ]
 
 
-class Autonomy(IntEnum):
-    """How far an actor may proceed on its own. Ascending.
+@dataclass(frozen=True)
+class Ladder:
+    """The ordered autonomy levels a deployment uses, ascending.
 
-    ``IntEnum`` because the ordering is the content: the whole calculus is a
-    minimum over this ladder, and a set of unordered labels could not express it.
+    ``levels[0]`` is the floor — the rung an unassessed factor caps at — and
+    ``levels[-1]`` is the most latitude the ladder can express. The kernel reads
+    none of the names; it compares positions, so any labelling works.
 
-    The two middle rungs are genuinely distinct and are routinely conflated.
-    ``CONFIRM`` needs positive assent before the act; ``NOTIFY`` needs only the
-    absence of an objection within a window the caller sets. The second is far
-    weaker oversight and should not be recorded as the first.
+    The ordering is the whole content. A set of unordered labels could not
+    express a minimum, and that minimum is the entire calculus.
     """
 
-    #: Does not act. The rung an unassessed factor caps at.
-    SUSPENDED = 0
-    #: May propose; someone else executes.
-    PROPOSE = 1
-    #: May act once this act has been positively approved.
-    CONFIRM = 2
-    #: May act after announcing it, unless stopped within the window.
-    NOTIFY = 3
-    #: May act, and report afterwards.
-    ACT = 4
+    levels: Tuple[str, ...]
 
+    def __post_init__(self) -> None:
+        levels = tuple(str(level) for level in self.levels)
+        if not levels:
+            raise ValueError("a ladder needs at least one level")
+        if len(set(levels)) != len(levels):
+            raise ValueError(f"ladder levels must be distinct: {levels}")
+        object.__setattr__(self, "levels", levels)
 
-#: The most restrictive rung. Where the calculus lands when it is told nothing.
-FLOOR = Autonomy.SUSPENDED
+    @property
+    def floor(self) -> str:
+        """The most restrictive rung. Where the calculus lands when told nothing."""
+        return self.levels[0]
+
+    @property
+    def top(self) -> str:
+        return self.levels[-1]
+
+    def rank(self, level: str) -> int:
+        """Position of ``level``. Raises for a level this ladder does not carry.
+
+        Refused rather than coerced: a level off the ladder is a wiring mistake,
+        and quietly reading it as the floor would turn a mistake into a policy.
+        """
+        try:
+            return self.levels.index(str(level))
+        except ValueError:
+            raise ValueError(
+                f"{level!r} is not on this ladder: {self.levels}") from None
+
+    def lower(self, one: str, other: str) -> str:
+        """Whichever of the two sits lower. The only operation the fold needs."""
+        return one if self.rank(one) <= self.rank(other) else other
 
 
 @dataclass(frozen=True)
@@ -88,26 +112,25 @@ class Factor:
     """One consideration and the highest autonomy it permits.
 
     ``ceiling`` of ``None`` means **unassessed**, which is not the same as
-    unconstraining: it caps at :data:`FLOOR`. ``why`` should say what was observed
-    and, ideally, what would have to change — it is the part a supervisor reads.
+    unconstraining: it caps at the ladder's floor. ``why`` should say what was
+    observed and, ideally, what would have to change — it is the part a supervisor
+    reads.
     """
 
     name: str
-    ceiling: Optional[Autonomy] = None
+    ceiling: Optional[str] = None
     why: str = ""
 
     @property
     def assessed(self) -> bool:
         return self.ceiling is not None
 
-    @property
-    def effective(self) -> Autonomy:
-        """The ceiling this factor actually imposes; ``FLOOR`` when unassessed."""
-        return FLOOR if self.ceiling is None else Autonomy(self.ceiling)
+    def effective(self, ladder: Ladder) -> str:
+        """The ceiling this factor imposes on ``ladder``; its floor when unassessed."""
+        return ladder.floor if self.ceiling is None else str(self.ceiling)
 
     def to_dict(self) -> dict:
-        out: dict = {"name": self.name, "ceiling": None if self.ceiling is None
-                     else Autonomy(self.ceiling).name}
+        out: dict = {"name": self.name, "ceiling": self.ceiling}
         if self.why:
             out["why"] = self.why
         return out
@@ -117,9 +140,10 @@ class Factor:
 class Escalation:
     """What the actor may do, and which factor is the reason it may not do more."""
 
-    granted: Autonomy
+    granted: str
     binding: Tuple[str, ...]
-    delegated: Autonomy
+    delegated: str
+    ladder: Ladder
     factors: Tuple[Factor, ...] = ()
 
     @property
@@ -130,13 +154,14 @@ class Escalation:
     def why(self) -> str:
         """One line a supervisor can act on: the rung, and what is holding it."""
         if not self.binding:
-            return f"{self.granted.name}: nothing further constrains it"
-        return f"{self.granted.name}: capped by {', '.join(self.binding)}"
+            return f"{self.granted}: nothing further constrains it"
+        return f"{self.granted}: capped by {', '.join(self.binding)}"
 
     def to_dict(self) -> dict:
         return {
-            "granted": self.granted.name,
-            "delegated": self.delegated.name,
+            "granted": self.granted,
+            "delegated": self.delegated,
+            "ladder": list(self.ladder.levels),
             "binding": list(self.binding),
             "unassessed": list(self.unassessed),
             "factors": [f.to_dict() for f in self.factors],
@@ -144,14 +169,15 @@ class Escalation:
 
 
 def ceiling(
-    factors: Iterable[Factor], *, delegated: Autonomy
+    factors: Iterable[Factor], *, delegated: str, ladder: Ladder
 ) -> Escalation:
     """The autonomy the factors leave, never above what was ``delegated``.
 
-    ``delegated`` is required rather than defaulted. A default would have to be
-    either the top rung — which grants by omission, the failure mode this module
-    exists to avoid — or the floor, which would make the common call useless. What
-    was actually conferred is known to the caller, so the caller says it.
+    ``delegated`` and ``ladder`` are both required rather than defaulted. A
+    default delegation would have to be either the top rung — which grants by
+    omission, the failure mode this module exists to avoid — or the floor, which
+    would make the common call useless. A default *ladder* would be a set of
+    levels this kernel invented for a deployment it knows nothing about.
 
     ``binding`` names every factor sitting at the granted level, so a reader can
     see what would have to change. When the delegation itself is the constraint
@@ -159,17 +185,18 @@ def ceiling(
     than the actor was given, which is a different fact and reads differently.
     """
     factors = tuple(factors)
-    delegated = Autonomy(delegated)
-    granted = delegated
+    granted = str(delegated)
+    ladder.rank(granted)                      # a delegation off the ladder is a bug
     for factor in factors:
-        granted = min(granted, factor.effective)
-    binding = tuple(f.name for f in factors if f.effective == granted
-                    and granted < delegated)
-    return Escalation(granted=granted, binding=binding,
-                      delegated=delegated, factors=factors)
+        granted = ladder.lower(granted, factor.effective(ladder))
+    binding = tuple(
+        f.name for f in factors
+        if f.effective(ladder) == granted and ladder.rank(granted) < ladder.rank(delegated))
+    return Escalation(granted=granted, binding=binding, delegated=str(delegated),
+                      ladder=ladder, factors=factors)
 
 
-def autonomy_verdict(requested: Autonomy, escalation: Escalation) -> Verdict:
+def autonomy_verdict(requested: str, escalation: Escalation) -> Verdict:
     """Was the autonomy the actor took within what the factors leave it?
 
     Mapped onto the existing honesty verdict; no vocabulary is minted:
@@ -186,13 +213,14 @@ def autonomy_verdict(requested: Autonomy, escalation: Escalation) -> Verdict:
     whether or not the assessment was complete. The OPEN case is about not
     silently reporting an incomplete assessment as a clean one.
     """
-    if Autonomy(requested) > escalation.granted:
+    ladder = escalation.ladder
+    if ladder.rank(requested) > ladder.rank(escalation.granted):
         return Verdict.NOT_SATISFIED
     return Verdict.OPEN if escalation.unassessed else Verdict.SATISFIED
 
 
 def fold_autonomy(
-    steps: Sequence[Tuple[str, Autonomy, Escalation]]
+    steps: Sequence[Tuple[str, str, Escalation]]
 ) -> IssueAggregate:
     """Weakest-link across the steps of a run, through the existing fold.
 
@@ -208,7 +236,7 @@ def fold_autonomy(
         [(ref, autonomy_verdict(requested, esc)) for ref, requested, esc in steps])
 
 
-def relax(target: Autonomy, escalation: Escalation, *, authorised_by: str) -> Autonomy:
+def relax(target: str, escalation: Escalation, *, authorised_by: str) -> str:
     """Restore autonomy, up to but never beyond what the factors currently leave.
 
     Escalation is a mechanical consequence of the state of the world and needs no
@@ -221,4 +249,4 @@ def relax(target: Autonomy, escalation: Escalation, *, authorised_by: str) -> Au
     """
     if not str(authorised_by).strip():
         raise ValueError("relaxing autonomy requires a reference to its authorisation")
-    return min(Autonomy(target), escalation.granted)
+    return escalation.ladder.lower(str(target), escalation.granted)

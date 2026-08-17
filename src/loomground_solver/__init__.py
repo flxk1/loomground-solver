@@ -256,7 +256,7 @@ from .falsifiability import (
     rank, best_support, support_verdict, fold_support,
 )
 from .escalation import (
-    Autonomy, FLOOR as AUTONOMY_FLOOR, Factor, Escalation,
+    Ladder, Factor, Escalation,
     ceiling, autonomy_verdict, fold_autonomy, relax,
 )
 from .proxy import (
@@ -419,7 +419,7 @@ __all__ = [
     "Falsifiability", "SUPPORT_FLOOR", "Evidence",
     "rank", "best_support", "support_verdict", "fold_support",
     # escalation — autonomy as a ceiling several factors impose, never a score
-    "Autonomy", "AUTONOMY_FLOOR", "Factor", "Escalation",
+    "Ladder", "Factor", "Escalation",
     "ceiling", "autonomy_verdict", "fold_autonomy", "relax",
     # proxy — what a measurement stands for, and whether anyone checked
     "Movement", "Proxy", "Substitution", "ProxyCycle",
