@@ -87,9 +87,27 @@ available to it. Nothing here needs inventing: the purpose arrives through the
 existing port discipline, from the graph or the host, as an ordinary premise.
 
 *Landed as `divergence`*: a trajectory compared against a `Mandate`, reporting
-`out-of-mandate`, `defeats-purpose` and `unserved`. Whether a step serves or
-defeats a purpose arrives already judged, and purposes stay opaque identifiers —
-a purpose must not become a kernel concept.
+`ungrounded`, `out-of-mandate`, `defeats-purpose` and `unserved`. Whether a step
+serves or defeats a purpose arrives already judged, and purposes stay opaque
+identifiers — a purpose must not become a kernel concept.
+
+**Corrected after first landing.** The first version took the mandate and the
+steps as flat local types with a `ref` that was an unchecked string, which made
+the comparison only as good as the caller's assertion — the failure this whole
+layer exists to refuse, reproduced inside the detector meant to catch it. The
+mandate and the trajectory live one layer down, in the knowledge engine that
+anchors claims to spans and refuses an ungrounded step; keeping the layers
+*separate* had been achieved by keeping them **disconnected**.
+
+Both terms now carry an `EvidenceRef` and `detect` requires an `EvidenceProvider`
+it actually calls `verify` on — through the injected port, so the grounding is
+real without the substrate being imported. There is no permissive default and no
+in-package no-op provider: a caller who wants findings without verification must
+write the provider that returns `True`, and thereby say so. An unverifiable
+mandate stops the comparison outright, being the second term of every comparison
+made here; an unverifiable step costs only itself, and is dropped from the record
+of what the run served so an unresolvable step cannot discharge a declared
+purpose.
 
 The claim that **the proxy-optimisation case is the same shape turned out to be
 wrong**, and it is worth recording why. A divergence needs someone to hand in the
@@ -143,6 +161,23 @@ incompletely assessed tuple maps to `OPEN` rather than passing, and the calculus
 only ever lowers — restoring autonomy requires a reference to the authorisation
 for restoring it, because an escalation follows from the state of the world while
 a de-escalation is an act someone is answerable for.
+
+**Corrected after first landing.** The first version applied that reasoning to
+the factor→rung *table* and then shipped the rungs themselves — a fixed
+`SUSPENDED < PROPOSE < CONFIRM < NOTIFY < ACT` enum, in the kernel. The
+governance language already owns this ladder and already publishes it as
+remappable data, saying so in as many words: *policy supplies the levels, their
+meanings, and their order; the language owns only the comparison rule.* A second
+ladder here was a divergent copy in the layer that holds no deployments, and a
+host would have had to map one onto the other — which is where two ladders drift.
+
+The ladder is now a caller-supplied `Ladder` of ordered level names, following
+the pattern this kernel already uses for anything subject-bearing (`PROFILES`,
+`PACKS`, `register_filter`, `register_method`). A host reads its levels from
+wherever it keeps its policy. `ceiling()` is a minimum over a total order, so it
+never needed particular rungs; a test greps the module to prove none ship, and a
+level off the ladder is refused rather than coerced to the floor — a wiring
+mistake must not become a conservative-looking policy.
 
 ### S4 · Oversight signals are untyped
 
