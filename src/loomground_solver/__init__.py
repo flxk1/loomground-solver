@@ -255,6 +255,10 @@ from .falsifiability import (
     Falsifiability, SUPPORT_FLOOR, Evidence,
     rank, best_support, support_verdict, fold_support,
 )
+from .escalation import (
+    Autonomy, FLOOR as AUTONOMY_FLOOR, Factor, Escalation,
+    ceiling, autonomy_verdict, fold_autonomy, relax,
+)
 
 # methods — the open family of reasoning methods (rule-nD)
 from .methods import METHODS, register_method, method, methods_by_kind
@@ -410,6 +414,9 @@ __all__ = [
     # falsifiability — rank evidence by how it could be shown wrong
     "Falsifiability", "SUPPORT_FLOOR", "Evidence",
     "rank", "best_support", "support_verdict", "fold_support",
+    # escalation — autonomy as a ceiling several factors impose, never a score
+    "Autonomy", "AUTONOMY_FLOOR", "Factor", "Escalation",
+    "ceiling", "autonomy_verdict", "fold_autonomy", "relax",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
