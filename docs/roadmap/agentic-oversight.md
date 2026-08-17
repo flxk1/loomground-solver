@@ -112,11 +112,22 @@ competence is a composition problem, and the parts are present:
 `proportionality` weighs, `epistemic_status` supplies settledness, `burden`
 carries who must show what, `decision` bounds the option space.
 
-*Candidate shape.* Compose the tuple and return a **declaration with a replayable
-derivation** — never a verdict. The kernel does not decide autonomy; it computes
-a defensible input to a host that does. An underdetermined tuple escalates,
-following the discipline the kernel already applies everywhere else: a collision
-it cannot separate stays undecided rather than becoming a fabricated winner.
+*Landed as `escalation`, in a different shape than sketched here.* Composing
+`proportionality`, `epistemic_status` and `burden` into an autonomy level would
+have meant shipping the mapping from a named factor to a rung, and that mapping
+is a claim about a deployment rather than about reasoning — policy smuggled into
+the mechanism. What the kernel contributes instead is the **fold**: each factor
+imposes a ceiling on an ordered ladder and the actor gets the lowest one, which
+is monotone (nothing compensates for anything), attributable (the capping factor
+is named, and a name is actionable where a magnitude is not), and fail-closed (an
+unassessed factor caps at the floor rather than dropping out of the minimum).
+Which factor caps where stays the caller's.
+
+The escalation discipline the kernel applies everywhere else holds: an
+incompletely assessed tuple maps to `OPEN` rather than passing, and the calculus
+only ever lowers — restoring autonomy requires a reference to the authorisation
+for restoring it, because an escalation follows from the state of the world while
+a de-escalation is an act someone is answerable for.
 
 ### S4 · Oversight signals are untyped
 
