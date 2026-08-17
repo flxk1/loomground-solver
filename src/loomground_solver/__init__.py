@@ -246,6 +246,7 @@ from .epistemic_status import (
     propagate_premises, propagate_under_condition, propagate_derivation,
     RootCauseReport, root_causes,
 )
+from .oversight import BriefItem, OversightBrief, oversight_brief
 
 # methods — the open family of reasoning methods (rule-nD)
 from .methods import METHODS, register_method, method, methods_by_kind
@@ -392,6 +393,8 @@ __all__ = [
     "status_to_verdict", "StatusedPremise",
     "propagate_premises", "propagate_under_condition", "propagate_derivation",
     "RootCauseReport", "root_causes",
+    # oversight — the bounded brief (selects; decides nothing)
+    "BriefItem", "OversightBrief", "oversight_brief",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
