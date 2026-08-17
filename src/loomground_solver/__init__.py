@@ -259,6 +259,10 @@ from .escalation import (
     Autonomy, FLOOR as AUTONOMY_FLOOR, Factor, Escalation,
     ceiling, autonomy_verdict, fold_autonomy, relax,
 )
+from .proxy import (
+    Movement, Proxy, Substitution, ProxyCycle,
+    check_proxies, chain, fold_substitutions,
+)
 
 # methods — the open family of reasoning methods (rule-nD)
 from .methods import METHODS, register_method, method, methods_by_kind
@@ -417,6 +421,9 @@ __all__ = [
     # escalation — autonomy as a ceiling several factors impose, never a score
     "Autonomy", "AUTONOMY_FLOOR", "Factor", "Escalation",
     "ceiling", "autonomy_verdict", "fold_autonomy", "relax",
+    # proxy — what a measurement stands for, and whether anyone checked
+    "Movement", "Proxy", "Substitution", "ProxyCycle",
+    "check_proxies", "chain", "fold_substitutions",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
