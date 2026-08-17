@@ -86,11 +86,26 @@ between a trajectory and an **authorising purpose**, and no such term is
 available to it. Nothing here needs inventing: the purpose arrives through the
 existing port discipline, from the graph or the host, as an ordinary premise.
 
-*Candidate shape.* A divergence check over `compose_paths`, `subsumption` and
-`cross_subsumption`: the trajectory either fails to subsume under the purpose, or
-subsumes literally while a defeater fires. `interpret.audit` already catches the
-self-contradictory or unwarranted move; the proxy-optimisation case is the same
-shape.
+*Landed as `divergence`*: a trajectory compared against a `Mandate`, reporting
+`out-of-mandate`, `defeats-purpose` and `unserved`. Whether a step serves or
+defeats a purpose arrives already judged, and purposes stay opaque identifiers —
+a purpose must not become a kernel concept.
+
+The claim that **the proxy-optimisation case is the same shape turned out to be
+wrong**, and it is worth recording why. A divergence needs someone to hand in the
+judgement that a step defeated a purpose, and the whole difficulty of proxy
+optimisation is that nobody has that judgement: the metric improved, and what it
+stands for was never measured. The missing term is not the purpose but the
+**substitution** — the declaration that this measurement stands for that goal —
+and once it is written down the failure is checkable from two readings.
+
+Landed as `proxy`, alongside rather than inside `divergence`: `gamed` (metric up,
+goal down), `unchecked` (nobody measured the goal, so the reading is no evidence
+about it, which is the common case and must never read as success), `misleading`
+(the instrument rather than the run is in doubt), `tracking`. Substitutions
+chain, support along a chain is weakest-link through the existing fold, and a
+chain that cycles is refused rather than truncated — a substitution grounding in
+nothing is the absence of a justification, not a weak one.
 
 ### S2 · Root cause is not surfaced ahead of its consequences
 
