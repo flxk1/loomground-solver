@@ -2,6 +2,30 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.5.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.4.0...solver-v0.5.0) (2026-08-18)
+
+
+### Features
+
+* **collapse:** weakest-link over a conjunction, never a product ([ef8b980](https://github.com/flxk1/loomground-solver/commit/ef8b9809464278b56bfad194a65687cf9c7cefb4))
+* **divergence:** compare a trajectory against the purpose it was given ([811addb](https://github.com/flxk1/loomground-solver/commit/811addb7a1bd435b20ed1bf09eaf408197f3ae95))
+* **epistemic:** surface the root presupposition, not its consequences ([84f6542](https://github.com/flxk1/loomground-solver/commit/84f6542465b38859355ee3a022f422a8f81cb4bd))
+* **escalation:** autonomy as the lowest ceiling, never a weighted sum ([2c38935](https://github.com/flxk1/loomground-solver/commit/2c38935acae61eb1ac70d8beb71d0d226818eddd))
+* **falsifiability:** rank evidence by how it could be shown wrong ([29e1f19](https://github.com/flxk1/loomground-solver/commit/29e1f19ecbe2ea7436e5fd9728e6d4937aab13a7))
+* **oversight:** the bounded brief a supervisor actually needs ([18bf510](https://github.com/flxk1/loomground-solver/commit/18bf510f5881057cc546b0ad44d5f74c08451dfa))
+* **proxy:** what a measurement stands for, and whether anyone checked ([4752d95](https://github.com/flxk1/loomground-solver/commit/4752d9551e4544819eb06f178077d5d769b2119a))
+
+
+### Bug Fixes
+
+* **solver:** stop shipping a ladder, and ground divergence via the port ([419dd0a](https://github.com/flxk1/loomground-solver/commit/419dd0a43ebdf99ba1b73da7af2a2e815a9774bf))
+
+
+### Documentation
+
+* **roadmap:** reasoning work for agentic oversight ([c36866b](https://github.com/flxk1/loomground-solver/commit/c36866bad1dbb89848ee4551c171eb87d65f2f7d))
+* **roadmap:** reasoning work for agentic oversight ([281aa33](https://github.com/flxk1/loomground-solver/commit/281aa33eefce83f84287ccc500196e619f567225))
+
 ## [0.4.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.3.0...solver-v0.4.0) (2026-08-10)
 
 
