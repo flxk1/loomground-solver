@@ -244,6 +244,24 @@ from .epistemic_status import (
     EpistemicStatus, SETTLED, UNSETTLED, is_settled, is_unsettled,
     status_to_verdict, StatusedPremise,
     propagate_premises, propagate_under_condition, propagate_derivation,
+    RootCauseReport, root_causes,
+)
+from .oversight import BriefItem, OversightBrief, oversight_brief
+from .divergence import (
+    Mandate, TrajectoryStep, Divergence, detect, fold_divergences,
+)
+from .collapse import ConstituentState, Constituent, state_to_verdict, collapse
+from .falsifiability import (
+    Falsifiability, SUPPORT_FLOOR, Evidence,
+    rank, best_support, support_verdict, fold_support,
+)
+from .escalation import (
+    Ladder, Factor, Escalation,
+    ceiling, autonomy_verdict, fold_autonomy, relax,
+)
+from .proxy import (
+    Movement, Proxy, Substitution, ProxyCycle,
+    check_proxies, chain, fold_substitutions,
 )
 
 # methods — the open family of reasoning methods (rule-nD)
@@ -390,6 +408,22 @@ __all__ = [
     "EpistemicStatus", "SETTLED", "UNSETTLED", "is_settled", "is_unsettled",
     "status_to_verdict", "StatusedPremise",
     "propagate_premises", "propagate_under_condition", "propagate_derivation",
+    "RootCauseReport", "root_causes",
+    # oversight — the bounded brief (selects; decides nothing)
+    "BriefItem", "OversightBrief", "oversight_brief",
+    # divergence — a trajectory compared against the purpose it was given
+    "Mandate", "TrajectoryStep", "Divergence", "detect", "fold_divergences",
+    # collapse — a conjunction where any term at its floor collapses the whole
+    "ConstituentState", "Constituent", "state_to_verdict", "collapse",
+    # falsifiability — rank evidence by how it could be shown wrong
+    "Falsifiability", "SUPPORT_FLOOR", "Evidence",
+    "rank", "best_support", "support_verdict", "fold_support",
+    # escalation — autonomy as a ceiling several factors impose, never a score
+    "Ladder", "Factor", "Escalation",
+    "ceiling", "autonomy_verdict", "fold_autonomy", "relax",
+    # proxy — what a measurement stands for, and whether anyone checked
+    "Movement", "Proxy", "Substitution", "ProxyCycle",
+    "check_proxies", "chain", "fold_substitutions",
     # methods (rule-nD)
     "METHODS", "register_method", "method", "methods_by_kind",
     # replay (rung 4)
