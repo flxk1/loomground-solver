@@ -9,6 +9,29 @@ most of them are reasoning problems wearing governance clothes. This slice
 records what the kernel already answers, what it does not, and what would have to
 be true to claim otherwise.
 
+> **Where this work now lives.** Six of the items below — the oversight brief,
+> falsifiability ranking, conjunctive collapse, mandate divergence, the escalation
+> ceiling and proxy substitution — were built in this repository and have since
+> been **moved out**, one narrow repository each: `loomground-brief`,
+> `loomground-falsifiability`, `loomground-collapse`, `loomground-mandate`,
+> `loomground-escalation`, `loomground-proxy`. They were never released from here.
+>
+> The reason is the frame below, applied one level up than it was written. The
+> gate forbids importing governance or a domain; it does not by itself stop
+> *subject vocabulary* accumulating in a kernel whose whole claim is that it holds
+> none. Agentic oversight is a subject area. Those six are its vocabulary, and they
+> were written here because that is where their imports were nearest — not because
+> the reasoning substrate needs them. Each now sits **above** this package,
+> depending on the shared verdict, the OPEN-dominant fold and the injected ports,
+> and reaching into no internals.
+>
+> One thing stayed: `epistemic_status.root_causes` (S2). Ordering a premise graph
+> by what presupposes what is reasoning, not oversight, so it belongs here and the
+> brief consumes it from here.
+>
+> The sections below are kept as written. What each item is and why it takes the
+> shape it does is the durable part; which repository holds it is not.
+
 The dependency-inversion gate is the frame for all of it: **nothing proposed here
 may import governance or a domain module, or carry a domain literal in executable
 code.** Everything below arrives through injected ports or is domain-neutral by
