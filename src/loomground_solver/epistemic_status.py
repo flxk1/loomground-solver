@@ -159,6 +159,11 @@ class StatusedPremise:
     name: str
     status: EpistemicStatus
     fact: Optional[object] = None  # case.Fact | case.Ground | None — by identity
+    #: Names of the premises this one rests on. Declared by whoever tags the
+    #: premise, exactly like ``status`` — it is not inferred. Empty by default,
+    #: so every existing caller is unaffected; it is read only by
+    #: :func:`root_causes`, never by the folds.
+    depends_on: Tuple[str, ...] = ()
 
     def to_verdict_item(self) -> Tuple[str, Verdict]:
         """The ``(name, Verdict)`` tuple this premise contributes to the fold.
@@ -242,4 +247,154 @@ def propagate_derivation(
             (premises_label, premise_fold.overall),
             (conclusion_label, conclusion_verdict),
         ]
+    )
+
+
+# ── root-cause selection (ORDERS the fold; re-derives nothing) ──────────────────
+
+@dataclass(frozen=True)
+class RootCauseReport:
+    """Which unsettled premises are *causes*, and which are only *consequences*.
+
+    ``overall`` is taken from :func:`propagate_premises` — the same OPEN-dominant
+    fold, not a second opinion. Everything else is a partition of the premise
+    names by why they are open:
+
+      * ``roots`` — premises unsettled **on their own status**. Settling anything
+        else cannot settle these; they are the actual causes.
+      * ``derived`` — premises whose own status is settled, that are open only
+        because they rest (transitively) on a root. Settling the roots settles
+        these, and they are what floods a reader's attention.
+      * ``settled`` — premises settled in themselves and resting on nothing open.
+      * ``dangling`` — ``(premise, missing_name)`` pairs where a declared
+        dependency names no premise in the set. Surfaced, never silently
+        dropped: a missing dependency means the set is under-described, and a
+        reader must know that before trusting the partition.
+      * ``cyclic`` — premises on a dependency cycle. Reported rather than
+        resolved; a cycle in what rests on what is a defect in the tagging, and
+        guessing a root inside one would be a fabricated answer.
+    """
+
+    overall: Verdict
+    roots: Tuple[str, ...] = ()
+    derived: Tuple[str, ...] = ()
+    settled: Tuple[str, ...] = ()
+    dangling: Tuple[Tuple[str, str], ...] = ()
+    cyclic: Tuple[str, ...] = ()
+
+    @property
+    def open(self) -> bool:
+        return self.overall is Verdict.OPEN
+
+    @property
+    def compression(self) -> Tuple[int, int]:
+        """``(roots, opens)`` — how much smaller the causal set is than the open
+        set. ``(1, 51)`` is the characteristic shape: one early assumption, fifty
+        consequences."""
+        return (len(self.roots), len(self.roots) + len(self.derived))
+
+
+def root_causes(premises: Iterable[StatusedPremise]) -> RootCauseReport:
+    """Separate the unsettled premises that are *causes* from those that are only
+    *consequences*, so a reader is shown the root rather than its descendants.
+
+    The characteristic failure of a long derivation is not an implausible step.
+    It is an early assumption that propagates: every later step is individually
+    defensible, each inherits the assumption's openness, and the defect sits
+    upstream of all of them. Reported flat, that is one cause wearing fifty
+    faces, and the fold's ``issues`` tuple lists all fifty.
+
+    This adds **no inference and no verdict**. ``overall`` comes from
+    :func:`propagate_premises`; this function only *orders* what that fold
+    already decided, using the ``depends_on`` each premise declares. A premise is
+    a root iff its **own** status is unsettled — settling something else cannot
+    settle it. A premise with a settled status that transitively rests on a root
+    is derived.
+
+    Honest edges, both surfaced rather than smoothed:
+
+      * a dependency naming no premise in the set is ``dangling`` — the set is
+        under-described and the partition is reported alongside that fact;
+      * a premise on a dependency cycle is ``cyclic`` and is classified into
+        neither ``roots`` nor ``derived``, because picking a root inside a cycle
+        would be a guess.
+    """
+    items = list(premises)
+    by_name = {p.name: p for p in items}
+
+    dangling: list[Tuple[str, str]] = []
+    for p in items:
+        for dep in p.depends_on:
+            if dep not in by_name:
+                dangling.append((p.name, dep))
+
+    # Cycle detection over the declared dependency edges (iterative colouring, so
+    # a deep chain cannot exhaust the stack).
+    WHITE, GREY, BLACK = 0, 1, 2
+    colour = {p.name: WHITE for p in items}
+    on_cycle: set = set()
+    for start in list(colour):
+        if colour[start] != WHITE:
+            continue
+        stack = [(start, iter(by_name[start].depends_on))]
+        colour[start] = GREY
+        path = [start]
+        while stack:
+            node, it = stack[-1]
+            advanced = False
+            for dep in it:
+                if dep not in by_name:
+                    continue
+                if colour[dep] is GREY:
+                    on_cycle.update(path[path.index(dep):] if dep in path else [dep, node])
+                    continue
+                if colour[dep] is WHITE:
+                    colour[dep] = GREY
+                    stack.append((dep, iter(by_name[dep].depends_on)))
+                    path.append(dep)
+                    advanced = True
+                    break
+            if not advanced:
+                colour[node] = BLACK
+                stack.pop()
+                if path and path[-1] == node:
+                    path.pop()
+
+    def rests_on_open(name: str) -> bool:
+        """True iff ``name`` transitively rests on an independently-unsettled
+        premise. Visited-set guarded, so a cycle terminates."""
+        seen: set = set()
+        frontier = list(by_name[name].depends_on)
+        while frontier:
+            dep = frontier.pop()
+            if dep in seen or dep not in by_name:
+                continue
+            seen.add(dep)
+            if is_unsettled(by_name[dep].status):
+                return True
+            frontier.extend(by_name[dep].depends_on)
+        return False
+
+    roots: list[str] = []
+    derived: list[str] = []
+    settled: list[str] = []
+    cyclic: list[str] = []
+
+    for p in items:                      # input order preserved throughout
+        if p.name in on_cycle:
+            cyclic.append(p.name)
+        elif is_unsettled(p.status):
+            roots.append(p.name)
+        elif rests_on_open(p.name):
+            derived.append(p.name)
+        else:
+            settled.append(p.name)
+
+    return RootCauseReport(
+        overall=propagate_premises(items).overall,
+        roots=tuple(roots),
+        derived=tuple(derived),
+        settled=tuple(settled),
+        dangling=tuple(dangling),
+        cyclic=tuple(cyclic),
     )
