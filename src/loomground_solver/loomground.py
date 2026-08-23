@@ -10,14 +10,18 @@ imported.
 Vocabulary: nodes actor|human|gate|master; cords authority(actor->gate)
 | pipe(gate->gate) | egress(gate->master); verdicts auto|human|refused|reserved
 |prohibited (strictest-wins join); declarations reserve|prohibit|obligation|
-redress|delegation (the acyclic principal chain, v0.7).
+redress|delegation|mandate|transfer (the acyclic principal chain, v0.9+; role
+canonicalization and the ISO/IEC 22989 autonomy ladder, v0.10; host-observed
+`kind` and gate-computed `risk`, PROM-001, v0.11 — see prom001.py).
 """
 from __future__ import annotations
 
 import re
 from typing import Any, Optional
 
-from loomground_governance import language_version, vocabulary
+from loomground_governance import (
+    canonical_roles, canonicalize_role, language_version, vocabulary,
+)
 
 
 # ── authoritative language artifacts ────────────────────────────────────────
@@ -25,31 +29,61 @@ from loomground_governance import language_version, vocabulary
 # data-only loomground-governance package published by the language repository.
 # This module implements them; it never redefines their values.
 LANGUAGE_VERSION = language_version()
-SUPPORTED_LANGUAGE_VERSIONS = tuple(dict.fromkeys(("0.7", "0.8.2", LANGUAGE_VERSION)))
+SUPPORTED_LANGUAGE_VERSIONS = tuple(dict.fromkeys((
+    "0.7", "0.8.2", "0.9", "0.10", "0.11", LANGUAGE_VERSION,
+)))
 RISKS = list(vocabulary("risk")["levels"])
 RISK_RANK = {r: i for i, r in enumerate(RISKS)}
 
-# §6 guard domain (amended v0.5, tags-guard): a guard
-# ranges over exactly these fields — NEVER `id` or `provenance` (the no-id wall) —
-# and each field admits a fixed operator set. `tags contains <tag>` is membership
-# over a declared, non-id category set (data origin/lineage/synthetic/taint); it
-# denotes no computed value. Enforced at APPLY stage (validate), not in the grammar.
-GUARD_FIELDS = {"kind", "risk", "party", "tags"}
-GUARD_OPS = {"kind": {"="}, "party": {"="}, "risk": {">=", "="}, "tags": {"contains"}}
+# v0.9.0 declared, ordered token properties (SPEC §4): `reversibility` states
+# how recoverable a released effect is; `uncertainty` states how settled the
+# basis for the action is. Both are asserted by whoever supplies the token —
+# never derived — and both order ascending in concern, exactly as `risk`.
+REVERSIBILITY = list(vocabulary("reversibility")["levels"])
+REVERSIBILITY_RANK = {r: i for i, r in enumerate(REVERSIBILITY)}
+UNCERTAINTY = list(vocabulary("uncertainty")["levels"])
+UNCERTAINTY_RANK = {u: i for i, u in enumerate(UNCERTAINTY)}
+# every ordered, guardable token property with a >=/= domain (kind and party
+# are matched by equality only and carry no order — see GUARD_OPS below).
+_ORDERED_RANKS = {"risk": RISK_RANK, "reversibility": REVERSIBILITY_RANK,
+                   "uncertainty": UNCERTAINTY_RANK}
 
-# §6/§7.1 autonomy GRADE (amended v0.6): a `grade` GRANTED on an actor and REQUIRED on
-# a SOURCE gate gates the step-(4) auto/human disposition — auto iff G ≥ R, an ungraded
-# actor at a graded gate is human (fail-closed), a gate with no required grade is 0.5
-# policy (grade inert). The ladder + level meanings are POLICY (loomground vocabulary/
-# grades.json); read from there, not re-declared. grade is a CONFIG attribute, not a
-# token field, NOT guardable. Additive — a gradeless graph is unchanged.
+# §6 guard domain — sourced from vocabulary/guard-domain.json, never
+# re-declared: `ranges_over` is the guard-field domain (amended v0.5 tags-guard,
+# v0.9.0 reversibility/uncertainty) and `operators` is each field's fixed
+# operator set. NEVER `id` or `provenance` (the no-id wall), never `grade`
+# (configuration, not a token field). `tags contains <tag>` is membership over a
+# declared, non-id category set; it denotes no computed value. Enforced at
+# APPLY stage (validate), not in the grammar.
+_GUARD_DOMAIN = vocabulary("guard-domain")
+GUARD_FIELDS = set(_GUARD_DOMAIN["ranges_over"])
+GUARD_OPS = {field: set(ops) for field, ops in _GUARD_DOMAIN["operators"].items()}
+
+# §6 role canonicalization (v0.10.0, POLICY: vocabulary/roles.json): maps a raw
+# bearer span (e.g. "the data protection officer") to a canonical governance
+# role id and node kind (agent/human). The language's `role = id` grammar
+# accepts only the canonical id, never the raw span — a host or ingest layer
+# resolves free text to that id BEFORE emitting a `human ... role <id>`
+# declaration or a reservation `by <role>` target. Consumed here, never
+# re-declared: the solver hardcodes no role or alias of its own. Both names are
+# imported above and re-exported unchanged from this module's namespace.
+
+# §6/§7.1 autonomy GRADE (amended v0.6; v0.10.0 aligns the default ladder to the
+# ISO/IEC 22989 §5.13 autonomy axis, L0..L6): a `grade` GRANTED on an actor and
+# REQUIRED on a SOURCE gate gates the step-(4) auto/human disposition — auto iff
+# G ≥ R, an ungraded actor at a graded gate is human (fail-closed), a gate with
+# no required grade is policy (grade inert). The ladder + level meanings are
+# POLICY (loomground vocabulary/grades.json); read from there, not re-declared.
+# grade is a CONFIG attribute, not a token field, NOT guardable. Additive — a
+# gradeless graph is unchanged.
 GRADES = list(vocabulary("grades")["levels"])
 GRADE_RANK = {g: i for i, g in enumerate(GRADES)}
+_GRADE_MAX_RANK = len(GRADES) - 1
 
 
 def grade_rank(grade: Any) -> int:
-    """Rank a grade on the ordered ladder. Accepts the language form ("L0".."L4")
-    or an adapter's integer rank (0..4). Anything not recognised —
+    """Rank a grade on the ordered ladder. Accepts the language form ("L0".."L6")
+    or an adapter's integer rank (0..len(GRADES)-1). Anything not recognised —
     None, an out-of-range int, a bool, a bad string — ranks below L0 (-1), i.e.
     treated as ungraded. That is the fail-safe reading on the GRANTED side (an
     unrecognised grant earns nothing); `grade_meets` separately refuses an
@@ -57,7 +91,7 @@ def grade_rank(grade: Any) -> int:
     if grade is None or isinstance(grade, bool):
         return -1
     if isinstance(grade, int):
-        return grade if 0 <= grade <= 4 else -1     # out-of-range int = unrecognised
+        return grade if 0 <= grade <= _GRADE_MAX_RANK else -1  # out-of-range int = unrecognised
     return GRADE_RANK.get(grade, -1)
 
 
@@ -187,6 +221,7 @@ def parse(text: str) -> dict[str, Any]:
     prohibitions: list[dict[str, Any]] = []
     obligations: list[dict[str, Any]] = []
     redress: list[dict[str, Any]] = []
+    transfers: list[dict[str, Any]] = []
 
     def add_node(rec: dict[str, Any]) -> None:
         nodes.append(rec)
@@ -217,6 +252,16 @@ def parse(text: str) -> dict[str, Any]:
                     i += 2
                 elif tok[i] == "grade" and i + 1 < len(tok):
                     rec["grade"] = tok[i + 1]; i += 2          # v0.6: granted autonomy grade
+                elif tok[i] == "mandate" and i + 1 < len(tok):
+                    # v0.9.0: the set of declared purposes this actor is authorised
+                    # to pursue. A second `mandate` on the same actor is grammatical
+                    # but ill-formed at apply (§6: at most one) — mirrors on-behalf-of.
+                    purposes, consumed = _parse_purpose_set(tok, i + 1, n)
+                    if "mandate" in rec:
+                        rec.setdefault("mandate_extra", []).append(purposes)
+                    else:
+                        rec["mandate"] = purposes
+                    i += 1 + consumed
                 elif tok[i] == "name":
                     rec["name"] = " ".join(tok[i + 1:]); i = len(tok)
                 else:
@@ -249,6 +294,8 @@ def parse(text: str) -> dict[str, Any]:
                     rec["party"] = tok[i + 1]; i += 2
                 elif tok[i] == "grade" and i + 1 < len(tok):
                     rec["grade_required"] = tok[i + 1]; i += 2  # v0.6: required grade (source gate)
+                elif tok[i] == "consign" and i + 1 < len(tok):
+                    rec["consignee"] = tok[i + 1]; i += 2       # v0.9.0: the party this gate's release goes to
                 elif tok[i] == "name" and i + 1 < len(tok):
                     rec["name"] = tok[i + 1]; i += 2
                 elif tok[i] == "grant":
@@ -284,6 +331,9 @@ def parse(text: str) -> dict[str, Any]:
         elif kw == "redress":
             redress.append(_parse_redress(tok, n))
 
+        elif kw == "transfer":
+            transfers.append(_parse_transfer(tok, n))
+
         else:
             raise ParseError(f"line {n}: unknown keyword {kw!r}")
 
@@ -297,7 +347,35 @@ def parse(text: str) -> dict[str, Any]:
         patch["obligations"] = obligations
     if redress:
         patch["redress"] = redress
+    if transfers:
+        patch["transfers"] = transfers
     return patch
+
+
+def _parse_purpose_set(tok: list[str], i: int, n: int) -> tuple[list[str], int]:
+    """Parse a `purpose set` (SYNTAX §3) starting at tok[i]: a bare purpose id,
+    or a brace-delimited set `{p, p, ...}`. Returns (purposes, tokens consumed).
+    Mirrors the quorum-target join-then-regex approach in _parse_reserve — the
+    braces MAY contain internal whitespace even though the surface has already
+    been whitespace-tokenised."""
+    if i >= len(tok):
+        raise ParseError(f"line {n}: expected a purpose set")
+    if tok[i].startswith("{"):
+        rest = " ".join(tok[i:])
+        m = re.match(r"^\{([^}]*)\}", rest)
+        if not m:
+            raise ParseError(f"line {n}: bad purpose set {rest!r}")
+        purposes = [p.strip() for p in m.group(1).split(",") if p.strip()]
+        return purposes, len(m.group(0).split())
+    return [tok[i]], 1
+
+
+def _parse_transfer(tok: list[str], n: int) -> dict[str, Any]:
+    # transfer <kind> to <consignee> within <purpose-set>
+    if len(tok) < 6 or tok[2] != "to" or tok[4] != "within":
+        raise ParseError(f"line {n}: transfer must be '<kind> to <consignee> within <purposes>'")
+    purposes, _consumed = _parse_purpose_set(tok, 5, n)
+    return {"kind": tok[1], "to": tok[3], "within": purposes}
 
 
 def _parse_grant(gate: str, g: str, n: int) -> dict[str, Any]:
@@ -422,13 +500,15 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
 
     # §6 guard-field domain / no-id wall. The parser accepts any 3-token `when`
     # tail (grammar); legality is decided HERE (apply stage) — a guard over `id` or
-    # `provenance` is forbidden, and each field has a fixed operator set. Closes a
-    # This closes the accept-and-defer gap for `id` and `provenance` guards.
+    # `provenance` is forbidden, and each field has a fixed operator set. This
+    # closes the accept-and-defer gap for `id` and `provenance` guards.
     # A tag-guard on a PROHIBITION is sanctioned by Loomground v0.6 (§6, the
     # `prohibit-tags` conformance vector): a guarded prohibition prohibits exactly the
     # matched subset (membership over a declared category, not branching on identity).
     # Tag-guards are not restricted to reservations; `evaluate` already applies
-    # this correctly for both declaration kinds.
+    # this correctly for both declaration kinds. v0.9.0 admits `reversibility` and
+    # `uncertainty` on exactly the terms `risk` already has (>=, =) — the same
+    # ordered-domain check below applies to all three via _ORDERED_RANKS.
     for _decl_kind, _decls in (("reservation", patch.get("reservations", [])),
                                ("prohibition", patch.get("prohibitions", []))):
         for _d in _decls:
@@ -441,11 +521,15 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
                 continue
             _field, _op, _val = _parts
             if _field not in GUARD_FIELDS:
-                errors.append(f"{_decl_kind} {_d.get('kind')!r}: guard over {_field!r} forbidden — a guard ranges only over kind/risk/party/tags (no-id wall)")
+                errors.append(
+                    f"{_decl_kind} {_d.get('kind')!r}: guard over {_field!r} forbidden — "
+                    f"a guard ranges only over {sorted(GUARD_FIELDS)} (no-id wall)")
             elif _op not in GUARD_OPS[_field]:
                 errors.append(f"{_decl_kind} {_d.get('kind')!r}: operator {_op!r} not defined for guard field {_field!r}")
-            elif _field == "risk" and _val not in RISK_RANK:
-                errors.append(f"{_decl_kind} {_d.get('kind')!r}: risk {_val!r} not in {RISKS}")
+            elif _field in _ORDERED_RANKS and _val not in _ORDERED_RANKS[_field]:
+                errors.append(
+                    f"{_decl_kind} {_d.get('kind')!r}: {_field} {_val!r} not in "
+                    f"{list(_ORDERED_RANKS[_field])}")
 
     cords = patch.get("cords", [])
     pipe_edges: list[tuple[str, str]] = []
@@ -502,6 +586,20 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
     # authority: the gate must grant that actor (grant clause or authority cord both count)
     # (authority cords are themselves the grant; nothing further to check here)
 
+    # v0.9.0 consignment: a gate declaring a consignee MUST be terminal (it
+    # egresses to the master) — exactly as a required grade on a non-source gate
+    # is ill-formed (§6, §7.1). `egress_gates` is the set of gates with an
+    # outgoing egress cord, so absence there is sufficient to catch an interior
+    # (piped-only) gate that never itself reaches the boundary.
+    _consignees: set[str] = set()
+    for nd in patch.get("nodes", []):
+        if nd["class"] == "gate" and nd.get("consignee"):
+            _consignees.add(nd["consignee"])
+            if nd["id"] not in egress_gates:
+                errors.append(
+                    f"gate {nd['id']!r}: consignee {nd['consignee']!r} on a "
+                    f"non-terminal gate is ill-formed (§6)")
+
     # §6/§7.1 autonomy grade (v0.6) — apply stage. A grade must be a level on the active
     # ladder; a REQUIRED grade may sit only on a SOURCE gate (no incoming pipe), since
     # the proposing actor is the recorded cause only there (no identity rides a pipe).
@@ -553,6 +651,32 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
             _obo_edges.append((nd["id"], boss_id))
     if _has_cycle(_obo_edges):
         errors.append("on-behalf-of relation has a cycle (the principal chain must be acyclic)")
+
+    # v0.9.0 mandate-attenuation invariant (§6): an actor declares at most one
+    # mandate, and a delegate's mandate MUST be a subset of its actor-delegator's.
+    # A delegator declaring no mandate has the empty set, so its delegate MUST
+    # also declare none — an actor cannot confer a purpose it was not itself
+    # given. Ranges over actor→actor links only: a human delegator constrains no
+    # mandate, exactly as it constrains no grant (above).
+    for nd in patch.get("nodes", []):
+        if nd["class"] != "actor":
+            continue
+        if nd.get("mandate_extra"):
+            errors.append(
+                f"actor {nd['id']!r}: declares more than one mandate — "
+                f"at most one per actor")
+        boss_id = nd.get("on_behalf_of")
+        if not boss_id:
+            continue
+        boss = by_id.get(boss_id)
+        if boss is None or boss.get("class") != "actor":
+            continue  # undeclared/human delegator handled above; human constrains no mandate
+        delegate_mandate = set(nd.get("mandate") or [])
+        boss_mandate = set(boss.get("mandate") or [])
+        if not delegate_mandate <= boss_mandate:
+            errors.append(
+                f"actor {nd['id']!r}: mandate {sorted(delegate_mandate)} widens beyond "
+                f"delegator {boss_id!r} ({sorted(boss_mandate)}) — ill-formed")
 
     # delegation MUST NOT amplify granted authority over a kind's risk set (§6): at every
     # gate where the delegate is granted a kind, the delegate's granted risk set over that
@@ -644,6 +768,46 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         if oe is not None and oe not in ("halt", "proceed"):
             errors.append(f"reserve {r.get('kind')!r}: bad on_elapse {oe!r} (expected 'halt' or 'proceed')")
 
+    # v0.9.0 transfer: a transfer names where a released action's material goes
+    # and the purposes it is limited to there (§6). A transfer naming a
+    # consignee no gate declares, or with an empty purpose set, is ill-formed —
+    # inert rather than silently accepted. The transfer-attenuation invariant
+    # applies the mandate rule to this LATERAL relation: for every actor granted
+    # over that kind at a gate consigning to that party, the transfer's purposes
+    # MUST be a subset of that actor's mandate (an unmandated actor holds the
+    # empty set and licenses nothing onward).
+    def _actors_granted_over_kind_at(gate_id: str, kind: str) -> set[str]:
+        grants_here = [g for g in patch.get("grants", []) if g.get("gate") == gate_id]
+        narrowed = {g["actor"] for g in grants_here}
+        result = {g["actor"] for g in grants_here if not (g.get("kinds") or []) or kind in (g.get("kinds") or [])}
+        for c in patch.get("cords", []):
+            if (c.get("type") or _classify(c, by_id)) == "authority" and c.get("to") == gate_id:
+                actor = c.get("from")
+                if actor not in narrowed:
+                    result.add(actor)  # a bare authority cord confers full (every-kind) authority
+        return result
+
+    for t in patch.get("transfers", []):
+        if t.get("to") not in _consignees:
+            errors.append(
+                f"transfer {t.get('kind')!r} to {t.get('to')!r}: no gate declares "
+                f"this consignee — ill-formed")
+            continue
+        purposes = set(t.get("within") or [])
+        if not purposes:
+            errors.append(f"transfer {t.get('kind')!r} to {t.get('to')!r}: empty purpose set — ill-formed")
+            continue
+        consigning_gates = {nd["id"] for nd in patch.get("nodes", [])
+                            if nd["class"] == "gate" and nd.get("consignee") == t["to"]}
+        for gate_id in consigning_gates:
+            for actor_id in _actors_granted_over_kind_at(gate_id, t["kind"]):
+                actor_mandate = set((by_id.get(actor_id) or {}).get("mandate") or [])
+                if not purposes <= actor_mandate:
+                    errors.append(
+                        f"transfer {t['kind']!r} to {t['to']!r}: purposes {sorted(purposes)} "
+                        f"exceed the mandate of actor {actor_id!r} ({sorted(actor_mandate)}) "
+                        f"granted at gate {gate_id!r} — ill-formed")
+
     return {"ok": not errors, "errors": errors}
 
 
@@ -712,10 +876,16 @@ def project(patch: dict[str, Any]) -> dict[str, Any]:
             p["grade"] = nd["grade"]                     # v0.6 granted autonomy grade
         if cls == "actor" and nd.get("on_behalf_of"):
             p["on_behalf_of"] = nd["on_behalf_of"]       # v0.7: one link of the principal chain
+        if cls == "actor" and nd.get("mandate"):
+            # v0.9.0: the declared purpose set, projected in ascending
+            # lexicographic order (§6, §9) regardless of declaration order.
+            p["mandate"] = sorted(set(nd["mandate"]))
         if cls == "gate" and "risk_floor" in nd:
             p["risk_floor"] = nd["risk_floor"]
         if cls == "gate" and nd.get("grade_required") is not None:
             p["grade_required"] = nd["grade_required"]   # v0.6 required grade (source gate)
+        if cls == "gate" and nd.get("consignee"):
+            p["consignee"] = nd["consignee"]              # v0.9.0: the party this gate's release goes to
         # §9 accountability attribute round-trips; an actor's projected party is
         # resolved along the principal chain (v0.7), a gate's is its declared one
         party = _resolved_party(nd, by_id) if cls == "actor" else nd.get("party")
@@ -760,6 +930,14 @@ def project(patch: dict[str, Any]) -> dict[str, Any]:
              "within": r.get("within")}
             for r in patch["redress"]
         ]
+    if patch.get("transfers"):
+        # v0.9.0: policy-global, projected as its own ordered member — a
+        # transfer belongs to no single node. `within` is a set, projected in
+        # ascending lexicographic order like `mandate` (§9).
+        obs["transfers"] = [
+            {"kind": t["kind"], "to": t["to"], "within": sorted(set(t.get("within") or []))}
+            for t in patch["transfers"]
+        ]
     return obs
 
 
@@ -792,6 +970,14 @@ def validate_token(token: Any) -> bool:
     tags = token.get("tags")
     if tags is not None and (not isinstance(tags, list) or not all(isinstance(x, str) for x in tags)):
         return False
+    # v0.9.0: `reversibility` and `uncertainty` are OPTIONAL declared, ordered
+    # properties (schema/token.schema.json) — absent is valid (no >= guard ever
+    # matches an absent level, §4); when present each MUST be a level on its
+    # active scale.
+    if "reversibility" in token and token["reversibility"] not in REVERSIBILITY_RANK:
+        return False
+    if "uncertainty" in token and token["uncertainty"] not in UNCERTAINTY_RANK:
+        return False
     return True
 
 
@@ -807,9 +993,16 @@ def _guard_holds(guard: Optional[str], token: dict[str, Any], eff_risk: str) -> 
         return token.get("kind") == val
     if field == "party" and op == "=":
         return token.get("party") == val
-    if field == "risk":
-        tr = RISK_RANK.get(eff_risk, -1)
-        vr = RISK_RANK.get(val, 10**9)
+    if field in _ORDERED_RANKS:
+        ranks = _ORDERED_RANKS[field]
+        # `risk` compares the gate-floored effective value (§4: a gate's risk
+        # floor raises a token's risk before any guard is tested); `reversibility`
+        # and `uncertainty` have no gate floor (§4) and read straight off the
+        # token. An absent ordered property ranks below every declared level, so
+        # it never satisfies a `>=` guard and matches `=` only against nothing —
+        # silence is neither treated as safety nor as danger (SPEC §4).
+        tr = ranks.get(eff_risk if field == "risk" else token.get(field), -1)
+        vr = ranks.get(val, 10**9)
         if op == ">=":
             return tr >= vr
         if op == "=":
@@ -966,7 +1159,7 @@ def to_netlist(patch: dict[str, Any]) -> str:
         # the netlist is the LANGUAGE surface ("L0".."L4"); normalise an app-layer
         # integer rank to its ladder string so parse(to_netlist(p)) round-trips and
         # never emits a bare int that would reparse as an invalid grade token.
-        if isinstance(g, int) and not isinstance(g, bool) and 0 <= g <= 4:
+        if isinstance(g, int) and not isinstance(g, bool) and 0 <= g <= _GRADE_MAX_RANK:
             return GRADES[g]
         return str(g)
     def _grant_tok(g: dict[str, Any]) -> str:
@@ -979,6 +1172,13 @@ def to_netlist(patch: dict[str, Any]) -> str:
             return f"{a}[{','.join(kinds)}]"
         return a
 
+    def _purpose_tok(purposes: Any) -> str:
+        # v0.9.0: a single purpose may be written bare; a set needs braces.
+        ps = list(purposes)
+        if len(ps) == 1:
+            return ps[0]
+        return "{" + ",".join(ps) + "}"
+
     for n in patch.get("nodes", []):
         cls = n.get("class")
         if cls == "actor":
@@ -989,6 +1189,8 @@ def to_netlist(patch: dict[str, Any]) -> str:
                 s += " on-behalf-of " + n["on_behalf_of"]
             if n.get("grade"):
                 s += " grade " + _grade_tok(n["grade"])       # normalise int rank → "Lk" for the language surface
+            if n.get("mandate"):
+                s += " mandate " + _purpose_tok(n["mandate"])  # v0.9.0 declared purpose set
             if n.get("name"):                                 # name consumes the rest of the line; keep it last
                 s += " name " + n["name"]
             lines.append(s)
@@ -1007,6 +1209,8 @@ def to_netlist(patch: dict[str, Any]) -> str:
                 s += " party " + n["party"]
             if n.get("grade_required"):
                 s += " grade " + _grade_tok(n["grade_required"])   # normalise int rank → "Lk"
+            if n.get("consignee"):
+                s += " consign " + n["consignee"]              # v0.9.0: the party this gate's release goes to
             if n.get("name") and " " not in str(n["name"]):   # gate name is a single token (grammar)
                 s += " name " + n["name"]
             gs = [g for g in grants if g.get("gate") == n["id"]]
@@ -1034,6 +1238,8 @@ def to_netlist(patch: dict[str, Any]) -> str:
         if rd.get("within"):
             s += " within " + rd["within"]
         lines.append(s)
+    for t in patch.get("transfers", []):
+        lines.append("transfer " + t["kind"] + " to " + t["to"] + " within " + _purpose_tok(t["within"]))
     for c in patch.get("cords", []):
         lines.append("cord " + c["from"] + " -> " + c["to"])
     return "\n".join(lines) + "\n"
@@ -1048,16 +1254,59 @@ def apply(source_or_patch) -> dict[str, Any]:
     return patch
 
 
-def reason(source_or_patch, transport: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
+           risk_table: Optional[Any] = None) -> dict[str, Any]:
     """Run Loomground as a Solver nD route.
 
     The generic partitions retain the richer language verdicts in ``trace``:
     ``auto`` actions are accepted, ``human``/``reserved`` actions are undecided,
     and ``refused``/``prohibited`` actions are rejected.
+
+    ``risk_table`` is an OPTIONAL ``prom001.GovernedRiskTable`` (PROM-001,
+    v0.11.0, §4/§7.4): when supplied, an activation carrying an ``observed``
+    host-observation dict is governed BEFORE evaluate() sees it — its `kind`
+    becomes host-observed (never the actor's claim), its `risk` is
+    gate-computed from the table with a self-declared hint admitted only as a
+    raise-only ratchet, and an unclassifiable observation or a declared/
+    observed mismatch floors it to the strictest tier. Absent `risk_table` (the
+    default), or an activation with no `observed` key, behaviour is
+    byte-for-byte unchanged from before PROM-001 — this is a strictly additive
+    capability, never a silent reinterpretation of an existing token. The dual
+    log — both the declared token and the host-observed facts, per activation —
+    lands in ``trace["prom001"]`` (§7.4); it is solver-internal and is not part
+    of the language's own observation/log schemas.
     """
     patch = apply(source_or_patch)
     observation = project(patch)
     transport = dict(transport or {"activations": []})
+
+    prom001_log: list[dict[str, Any]] = []
+    if risk_table is not None:
+        from .prom001 import HostObservation, govern_token  # deferred: avoids a module cycle
+
+        governed_activations = []
+        for act in transport.get("activations", []):
+            observed = act.get("observed")
+            if observed is None:
+                governed_activations.append(act)
+                continue
+            host_observation = HostObservation(
+                kind=observed.get("kind"), target=observed.get("target", ""),
+                context=observed.get("context", ""), grade=observed.get("grade"),
+            )
+            governed = govern_token(act.get("token") or {}, host_observation, risk_table)
+            prom001_log.append({
+                "activation": (act.get("token") or {}).get("id"),
+                "declared": governed.declared,
+                "observed": governed.observed,
+                "kind": governed.kind,
+                "risk": governed.risk,
+                "floored": governed.floored,
+                "floor_reason": governed.floor_reason,
+            })
+            governed_activations.append({**act, "token": governed.token})
+        transport = {**transport, "activations": governed_activations}
+
     evaluation = evaluate(patch, transport)
     log = evaluate_log(patch, transport)
     accepted, undecided, rejected = [], [], {}
@@ -1084,6 +1333,14 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None) -> dict[
         else:
             rejected[action_id] = verdict
 
+    trace: dict[str, Any] = {
+        "observation": observation,
+        "evaluation": evaluation,
+        "log": log,
+    }
+    if prom001_log:
+        trace["prom001"] = prom001_log
+
     return {
         "method": "loomground",
         "language": "loomground",
@@ -1092,11 +1349,7 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None) -> dict[
         "accepted": sorted(accepted),
         "undecided": sorted(undecided),
         "rejected": dict(sorted(rejected.items())),
-        "trace": {
-            "observation": observation,
-            "evaluation": evaluation,
-            "log": log,
-        },
+        "trace": trace,
     }
 
 

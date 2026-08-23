@@ -2,8 +2,8 @@
 # pyproject.toml. Kept out of package metadata so the built distribution stays
 # index-clean. Install this before `pip install .` so the range is already
 # satisfied and pip never needs an index for the sibling package.
-# Immutable release commits: governance v0.8.2 and deontic v0.1.2.
-loomground-governance @ git+https://github.com/flxk1/loomground-governance@9e91cf8d4b8624fbf017b7a96ec53c3ce366d31e
+# Immutable release commits: governance v0.11.0 and deontic v0.1.2.
+loomground-governance @ git+https://github.com/flxk1/loomground-governance@cf09ad8336c0ef47e700952896314472129fa4c7
 loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@6fc6df578a35be58924e8d3700fb992b24d68bbb
 # tomllib is stdlib from 3.11; supply_chain_gate.py falls back to tomli on 3.10.
 tomli==2.2.1 ; python_version < "3.11"
