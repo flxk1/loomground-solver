@@ -2,6 +2,14 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.6.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.5.0...solver-v0.6.0) (2026-08-23)
+
+
+### Features
+
+* **engine:** language 0.11.0 conformance + PROM-001 integrity ([2b331d7](https://github.com/flxk1/loomground-solver/commit/2b331d79871a3bac5a7ace4ebf1b7d03fd1bfd4e))
+* **engine:** language 0.11.0 conformance + PROM-001 integrity ([151321f](https://github.com/flxk1/loomground-solver/commit/151321f81f5bae4b7206385c45b067d96161e8b3))
+
 ## [0.5.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.4.0...solver-v0.5.0) (2026-08-18)
 
 
