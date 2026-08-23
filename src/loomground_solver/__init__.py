@@ -272,6 +272,11 @@ from .loomground import (
     parse as parse_loomground, project as observe_loomground, reason as reason_loomground,
 )
 
+# PROM-001 — host-observed kind, gate-computed risk (v0.11.0; loomground §4/§7.4)
+from .prom001 import (
+    GovernedEvaluation, GovernedRiskTable, HostObservation, govern_token,
+)
+
 # universal system adapters — product-native 5D+nD projection
 from .adapters import (
     AdapterCapabilities, AdapterRegistry, CoordinateAssignment, LoomgroundAdapter,
@@ -408,6 +413,8 @@ __all__ = [
     # Loomground language route
     "ApplyError", "ParseError", "apply_loomground", "evaluate_loomground",
     "parse_loomground", "observe_loomground", "reason_loomground",
+    # PROM-001 — host-observed kind, gate-computed risk (v0.11.0)
+    "GovernedEvaluation", "GovernedRiskTable", "HostObservation", "govern_token",
     # universal system adapters
     "AdapterCapabilities", "AdapterRegistry", "CoordinateAssignment",
     "LoomgroundAdapter", "NDSystem", "SolverProjection", "SystemAdapter",
