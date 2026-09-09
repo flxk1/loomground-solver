@@ -14,3 +14,4 @@
 ## Design
 
 - [Vision and points of record](design/vision.md)
+- [Kernel overview, adapter history and compatibility](design/overview.md)
