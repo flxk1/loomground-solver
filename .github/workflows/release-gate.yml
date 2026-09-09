@@ -28,8 +28,8 @@ jobs:
       - name: Record resolved Loomground revision
         run: python -m pip freeze | grep '^loomground-governance @'
       - run: python -m pytest -q
-      - run: python scripts/run_loomground_conformance.py
-      - run: python scripts/check_version_coherence.py
-      - run: python scripts/check_adapter_selection_neutrality.py
-      - run: python scripts/check_register.py
+      - run: python tools/run_loomground_conformance.py
+      - run: python tools/check_version_coherence.py
+      - run: python tools/check_adapter_selection_neutrality.py
+      - run: python tools/check_register.py
       - run: python -m build
