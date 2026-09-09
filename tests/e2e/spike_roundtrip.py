@@ -11,7 +11,7 @@ hand-authored one, and replay.verify_trace accepts across the boundary.
 Deliberately OUTSIDE src/loomground_solver/ (purity invariant: the panel's
 case corpus is domain data; this spike touches other planes). Run:
 
-  .venv/bin/python panel_e2e/spike_roundtrip.py
+  .venv/bin/python tests/e2e/spike_roundtrip.py
 """
 from __future__ import annotations
 

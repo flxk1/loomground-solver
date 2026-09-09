@@ -3,7 +3,7 @@
 """Loomground 0.9 -> 0.11 vocabulary: mandate/transfer/consign, the
 reversibility/uncertainty guard fields, the ISO/IEC 22989 autonomy ladder
 (0-6), and role canonicalization. The governance conformance runner
-(scripts/run_loomground_conformance.py) is the authority on these vectors;
+(tools/run_loomground_conformance.py) is the authority on these vectors;
 this file adds solver-level unit coverage a conformance run does not, and
 pins the concrete values the deliverable cites."""
 import pytest

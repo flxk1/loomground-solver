@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 flxk1
-"""panel_e2e — the graded panel's END-TO-END lane over the real planes.
+"""tests.e2e — the graded panel's END-TO-END lane over the real planes.
 
 The in-process panel (src/loomground_solver/eval/panel) proves the engine;
 this package proves the PIPELINE: statute text → loomground-ingest
@@ -24,9 +24,9 @@ planes are not solver dependencies — the purity invariant, again): install
 loomground-ingest, loomground-versum and loomground-deontic (>=0.1.3)
 alongside the solver, then
 
-    python -m panel_e2e.corpus      # the scorecard: verdict + debt columns
-    python -m panel_e2e.harness <case-module>   # one case, tri-state
-    python -m panel_e2e.spike_roundtrip         # Phase-0 minimal round-trip
+    python -m tests.e2e.corpus      # the scorecard: verdict + debt columns
+    python -m tests.e2e.harness <case-module>   # one case, tri-state
+    python -m tests.e2e.spike_roundtrip         # Phase-0 minimal round-trip
 
 Exit 0 = PASS or UNLOWERED (a named coverage gap); FAIL means breakage.
 """

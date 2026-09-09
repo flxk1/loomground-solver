@@ -10,7 +10,7 @@ SPDX-License-Identifier = "Apache-2.0"
 
 [[annotations]]
 path = [
-  ".github/**", "src/loomground_solver/**", "scripts/**", "tests/**",
+  ".github/**", "src/loomground_solver/**", "tools/**", "tests/**",
   "*.json", "*.toml",
   "skills/**", ".claude-plugin/**",
 ]
