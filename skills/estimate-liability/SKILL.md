@@ -1,6 +1,6 @@
 ---
 name: estimate-liability
-description: Estimate the conditional probability of liability (or other adverse outcome) as a calibrated range, given evidence factors. Solver analytic skill wrapping the kernel's Bayesian method; an organisational estimate, not legal advice. Triggers - "how likely is liability", "exposure probability", "odds of an adverse finding".
+description: Estimate the conditional probability of liability (or other adverse outcome) as a calibrated range, given evidence factors. Solver analytic skill wrapping the kernel's Bayesian method; an organisational estimate, not legal advice. Use when the user wants a calibrated probability of liability or another adverse outcome from known evidence factors. Triggers - "how likely is liability", "exposure probability", "odds of an adverse finding".
 ---
 
 # estimate-liability
