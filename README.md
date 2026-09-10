@@ -2,6 +2,10 @@
 
 Shared reasoning kernel: composes 5D edges, verifies defeasible reasoning and returns a bounded decision, with governance and corpus injected through ports.
 
+## Problem
+
+A model decides on its own knowledge; the decision cannot be replayed. A kernel that composes evidence and returns pass, violation or escalate, corpus and policy injected.
+
 ## Install
 
 ```bash
@@ -22,7 +26,25 @@ result = default_service().verify(request)    # reasoning.interop 1.0 request di
 ```bash
 loomground-solver manifest
 loomground-solver verify request.json
-loomground-solver loomground policy.lg --transport transport.json
+```
+
+## Example
+
+`policy.lg`:
+
+```
+actor  agent
+human  dpo  role legal
+gate   transfer  risk high  grant agent
+reserve data_transfer by legal when risk >= high
+cord agent    -> transfer
+cord transfer -> master
+```
+
+```
+in : transport.json = {"activations":[{"actor":"agent","source":"transfer","token":{"id":"t1","kind":"data_transfer","risk":"high","party":"customer-42","provenance":["urn:dls:sha256:b3421929b6310f99781cd8fe287294d0a152acc15ee6b3cfcdcbdde340812d40#para-1:150-240"]}}]}
+     loomground-solver loomground policy.lg --transport transport.json | jq -c '{status, evaluation: .trace.evaluation, undecided}'
+out: {"status":"escalate","evaluation":{"transfer":{"master":"withhold","verdict":"reserved"}},"undecided":["t1"]}
 ```
 
 ## Interface
@@ -32,8 +54,8 @@ loomground-solver loomground policy.lg --transport transport.json
 | Inputs | reasoning pairs on the 5D edge model (structural · causal · intentional · temporal · relational); cases and rule-packs; `ReasoningRequest` (`reasoning.interop` 1.0, `reasoning.edges/v1`, inline evidence under `extensions.inline_evidence`); `.lg` policy + transport |
 | Outputs | justified answer `PASS` \| `VIOLATION` \| `ESCALATE`; decision space `accepted` \| `undecided` \| `rejected`; fingerprint (open nD family); `ReasoningResult` with a replayable signed trace |
 | Ports (`loomground_solver.ports`) | `NormSource` · `EvidenceProvider` · `CandidateProvider` · `StructuralCompiler` · `ReasoningService` · `Governance` (default `NullGovernance`) · `Signer` |
-| Dependency direction | solver imports the data-only `loomground-governance` kit and `loomground-deontic`; graphs and hosts import solver; `tests/test_dependency_inversion.py` fails on any graph, governance-engine or domain import inside the package |
-| Extension points | `register_method` (20 registered methods) · `SystemAdapter` + `AdapterRegistry` (built-in: loomground, versum corpus, deontic, filters) · `addons/` (advisor, metacognition, world_model) |
+| Dependency direction | solver imports the data-only `loomground-governance` kit and `loomground-deontic`; graphs and hosts import solver; `tests/test_dependency_inversion.py` fails on graph, governance-engine or domain imports |
+| Extension points | `register_method` (20 registered methods) · `SystemAdapter` + `AdapterRegistry` · `addons/` (advisor, metacognition, world_model) |
 
 Contracts: [reasoning-interop](docs/contracts/reasoning-interop.md) · [loomground-compatibility](docs/contracts/loomground-compatibility.md). Running it: [docs/guides/operations.md](docs/guides/operations.md).
 
