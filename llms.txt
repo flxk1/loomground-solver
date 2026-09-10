@@ -1,0 +1,50 @@
+# loomground-solver
+
+> Shared reasoning kernel: composes 5D edges, verifies defeasible reasoning and returns a bounded decision, with governance and corpus injected through ports.
+
+## Problem
+A model decides on its own knowledge; the decision cannot be replayed. A kernel that composes evidence and returns pass, violation or escalate, corpus and policy injected.
+
+## Install
+```bash
+pip install -r requirements-dev.txt   # pinned loomground-governance + loomground-deontic
+pip install .                         # installs the `loomground-solver` command
+python -m pytest -q
+```
+
+## Usage
+```python
+from loomground_solver import entail, check, narrow, fingerprint, decision_space, default_service
+
+out = narrow(problem_fp, federation)          # {solution, escalate, determinacy, complete}
+result = default_service().verify(request)    # reasoning.interop 1.0 request dict
+```
+
+```bash
+loomground-solver manifest
+loomground-solver verify request.json
+```
+
+## Interface
+| Element | Definition |
+| --- | --- |
+| Inputs | reasoning pairs on the 5D edge model (structural · causal · intentional · temporal · relational); cases and rule-packs; `ReasoningRequest` (`reasoning.interop` 1.0, `reasoning.edges/v1`, inline evidence under `extensions.inline_evidence`); `.lg` policy + transport |
+| Outputs | justified answer `PASS` \| `VIOLATION` \| `ESCALATE`; decision space `accepted` \| `undecided` \| `rejected`; fingerprint (open nD family); `ReasoningResult` with a replayable signed trace |
+| Ports (`loomground_solver.ports`) | `NormSource` · `EvidenceProvider` · `CandidateProvider` · `StructuralCompiler` · `ReasoningService` · `Governance` (default `NullGovernance`) · `Signer` |
+| Dependency direction | solver imports the data-only `loomground-governance` kit and `loomground-deontic`; graphs and hosts import solver; `tests/test_dependency_inversion.py` fails on graph, governance-engine or domain imports |
+| Extension points | `register_method` (20 registered methods) · `SystemAdapter` + `AdapterRegistry` · `addons/` (advisor, metacognition, world_model) |
+
+Contracts: [reasoning-interop](docs/contracts/reasoning-interop.md) · [loomground-compatibility](docs/contracts/loomground-compatibility.md). Running it: [docs/guides/operations.md](docs/guides/operations.md).
+
+## Family
+Shared reasoning kernel.
+
+- consumes: [loomground-governance](https://github.com/flxk1/loomground-governance) `>=0.8,<0.12` · [loomground-deontic](https://github.com/flxk1/loomground-deontic) `>=0.1,<0.2`
+- consumed by: [loomground-versum](https://github.com/flxk1/loomground-versum) (corpus adapter, `reasoning.interop`) · loomground-norm · loomground-legal · the diagnostic operators (brief, collapse, escalation, falsifiability, mandate, proxy) · RVND
+- pipeline: `source → loomground-ingest → loomground-versum → loomground-solver → applied or diagnostic planes`
+
+Kernel intent, adapter history and compatibility policy: [docs/design/overview.md](docs/design/overview.md).
+
+Language: loomground — guide https://github.com/flxk1/loomground/blob/main/llms.txt (the .lg language an agent reads, emits, validates); catalogue https://github.com/flxk1/loomground/blob/main/CATALOGUE.json
+Skills: advise-solver-addons, analyse-risks, estimate-liability, litigation-risk-assessor, opponent-modeler, probability-tracker, strategic-analysis
+MCP tools: solver_advise_addons, solver_analyse_risks, solver_estimate_liability, solver_litigation_risk, solver_opponent_model, solver_probability, solver_strategy
