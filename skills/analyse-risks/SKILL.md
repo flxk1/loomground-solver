@@ -1,6 +1,6 @@
 ---
 name: analyse-risks
-description: Score and rank risks by impact x likelihood and prioritise mitigations, via the kernel's decision methods. Solver analytic skill; fails closed without the kernel. Triggers - "analyse the risks", "risk matrix", "score these risks", "what to mitigate first".
+description: Score and rank risks by impact x likelihood and prioritise mitigations, via the kernel's decision methods. Solver analytic skill; fails closed without the kernel. Use when the user has a set of risks to score, rank, or prioritise for mitigation. Triggers - "analyse the risks", "risk matrix", "score these risks", "what to mitigate first".
 ---
 
 # analyse-risks

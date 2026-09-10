@@ -1,6 +1,6 @@
 ---
 name: opponent-modeler
-description: Model an adversary - their options, payoffs, likely move, and exploitable tendencies. Solver analytic skill wrapping the installed loomground_solver kernel; fails closed without it. Triggers - "model the opponent", "what will they do", "predict their move", "where are they exploitable".
+description: Model an adversary - their options, payoffs, likely move, and exploitable tendencies. Solver analytic skill wrapping the installed loomground_solver kernel; fails closed without it. Use when the user needs to anticipate a specific adversary or counterparty before choosing a move. Triggers - "model the opponent", "what will they do", "predict their move", "where are they exploitable".
 ---
 
 # opponent-modeler

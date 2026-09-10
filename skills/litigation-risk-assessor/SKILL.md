@@ -1,6 +1,6 @@
 ---
 name: litigation-risk-assessor
-description: Assess dispute risk - quantify exposure, weigh merits, recommend settle or fight - via the kernel's decision theory. Solver analytic skill; an organisational assessment, not legal advice. Triggers - "assess litigation risk", "what's our exposure", "settle or fight", "weigh the merits".
+description: Assess dispute risk - quantify exposure, weigh merits, recommend settle or fight - via the kernel's decision theory. Solver analytic skill; an organisational assessment, not legal advice. Use when the user faces an actual or threatened dispute and needs exposure quantified or a settle-or-fight recommendation. Triggers - "assess litigation risk", "what's our exposure", "settle or fight", "weigh the merits".
 ---
 
 # litigation-risk-assessor

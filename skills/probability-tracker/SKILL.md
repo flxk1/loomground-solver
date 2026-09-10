@@ -1,6 +1,6 @@
 ---
 name: probability-tracker
-description: Maintain and update a calibrated probability over an uncertain hypothesis as evidence arrives (Bayesian). Solver analytic skill wrapping the loomground_solver kernel; fails closed without it. Triggers - "track the odds", "update the probability", "what's the likelihood now", "chances given this evidence".
+description: Maintain and update a calibrated probability over an uncertain hypothesis as evidence arrives (Bayesian). Solver analytic skill wrapping the loomground_solver kernel; fails closed without it. Use when the user holds an uncertain hypothesis and wants its probability tracked and updated as evidence arrives. Triggers - "track the odds", "update the probability", "what's the likelihood now", "chances given this evidence".
 ---
 
 # probability-tracker
