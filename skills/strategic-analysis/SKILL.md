@@ -1,6 +1,6 @@
 ---
 name: strategic-analysis
-description: Analyse a competitive/adversarial position - moves, threats, opportunities, plan - via the kernel's decision methods and possible-worlds. Solver analytic skill; fails closed without the kernel. Triggers - "analyse this position", "what's my best move", "what are the threats", "think through the strategy".
+description: Analyse a competitive/adversarial position - moves, threats, opportunities, plan - via the kernel's decision methods and possible-worlds. Solver analytic skill; fails closed without the kernel. Use when the user needs a competitive or adversarial position analysed into moves, threats, opportunities, and a plan. Triggers - "analyse this position", "what's my best move", "what are the threats", "think through the strategy".
 ---
 
 # strategic-analysis
