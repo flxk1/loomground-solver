@@ -1,6 +1,7 @@
 ---
 name: strategic-analysis
 description: Analyse a competitive/adversarial position - moves, threats, opportunities, plan - via the kernel's decision methods and possible-worlds. Solver analytic skill; fails closed without the kernel. Use when the user needs a competitive or adversarial position analysed into moves, threats, opportunities, and a plan. Triggers - "analyse this position", "what's my best move", "what are the threats", "think through the strategy".
+allowed-tools: solver_strategy
 ---
 
 # strategic-analysis
@@ -11,6 +12,11 @@ rules, plays them out across possible worlds, and reports the strongest line wit
 opportunities it turns on.
 
 ## Run it
+
+Primary path: call `solver_strategy` with `{"payoffs":{...}}` —
+the same JSON the script reads on stdin; it returns exactly what the script prints.
+
+Shell fallback:
 
 ```
 echo '{"payoffs":{...}}' | python3 scripts/run.py

@@ -1,6 +1,7 @@
 ---
 name: analyse-risks
 description: Score and rank risks by impact x likelihood and prioritise mitigations, via the kernel's decision methods. Solver analytic skill; fails closed without the kernel. Use when the user has a set of risks to score, rank, or prioritise for mitigation. Triggers - "analyse the risks", "risk matrix", "score these risks", "what to mitigate first".
+allowed-tools: solver_analyse_risks
 ---
 
 # analyse-risks
@@ -10,6 +11,11 @@ likelihood; the kernel scores and ranks them, and proposes mitigations in priori
 the scoring scheme shown so the ranking is auditable, not a black box.
 
 ## Run it
+
+Primary path: call `solver_analyse_risks` with `{"vectors":{"riskA":[impact,likelihood]}}` —
+the same JSON the script reads on stdin; it returns exactly what the script prints.
+
+Shell fallback:
 
 ```
 echo '{"vectors":{"riskA":[impact,likelihood]}}' | python3 scripts/run.py
