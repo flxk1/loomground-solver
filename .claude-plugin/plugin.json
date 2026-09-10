@@ -15,5 +15,11 @@
     "risk",
     "solver",
     "world-model"
-  ]
+  ],
+  "mcpServers": {
+    "loomground": {
+      "command": "loomground-mcp",
+      "args": ["serve", "--transport", "stdio"]
+    }
+  }
 }

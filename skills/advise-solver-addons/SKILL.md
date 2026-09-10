@@ -1,6 +1,7 @@
 ---
 name: advise-solver-addons
 description: Deterministically assess whether a Loomground Solver problem benefits from the optional world-model add-on or whether verified historical runs are ready for metacognitive analysis. Use when users ask whether to enable Solver add-ons, need an explainable add-on recommendation, want required or missing inputs identified, or need provider-neutral activation guidance. Do not use it to select a graph, retriever, model, storage provider, or authorization mechanism.
+allowed-tools: solver_advise_addons
 ---
 
 # Advise Solver add-ons
@@ -11,7 +12,9 @@ database and product adapter opaque. Use only declared request/run metadata.
 ## Workflow
 
 1. Build a JSON payload with `policy`, `problem`, and/or `runs`.
-2. Run `python scripts/advise.py INPUT.json`, or pipe the payload on stdin.
+2. Call `solver_advise_addons` with that payload (primary path); it returns
+   exactly what the script prints. Shell fallback: run
+   `python scripts/advise.py INPUT.json`, or pipe the payload on stdin.
 3. Report each score, threshold, reason, required input and missing input.
 4. State explicitly that `activation_performed` is false.
 5. If activation is requested, require the host to authorize and load its own
