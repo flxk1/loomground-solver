@@ -2,6 +2,25 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.6.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.5.0...solver-v0.6.0) (2026-09-11)
+
+
+### Features
+
+* **engine:** language 0.11.0 conformance + PROM-001 integrity ([47b01b4](https://github.com/flxk1/loomground-solver/commit/47b01b4cfcd8b7a1d10f5310fe80779589bae010))
+
+
+### Dependencies
+
+* accept loomground-deontic 0.2 (cap &lt;0.3, dev pin 0.2.0) ([49fe34e](https://github.com/flxk1/loomground-solver/commit/49fe34e0b6e953c96b31036702bad37752cd50f2))
+
+
+### Documentation
+
+* llms.txt generated from README ([24765f2](https://github.com/flxk1/loomground-solver/commit/24765f292e1efdaa033e51be6f890f4887e66738))
+* README Problem and executed Example ([3516083](https://github.com/flxk1/loomground-solver/commit/351608303311c4016fcd5439ad23e5b4cbeb6226))
+* README to canon (346 words), description, Family ([4a84e26](https://github.com/flxk1/loomground-solver/commit/4a84e26d1ab19513a5c232d8dde51a6b90567373))
+
 ## [0.5.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.4.0...solver-v0.5.0) (2026-08-18)
 
 
