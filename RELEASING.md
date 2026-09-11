@@ -12,7 +12,7 @@ questions, and none of them should be collapsed into another:
 
 1. **Package/release** — `pyproject.toml` and `.release-please-manifest.json` share
    one number (currently `0.1.0`). This is the version PyPI installs and the version
-   this document's release flow manages. `scripts/check_version_coherence.py` gates
+   this document's release flow manages. `tools/check_version_coherence.py` gates
    that the two stay equal.
 2. **Contract/protocol** — `reasoning.interop/1.0`, the claim-axes vocabulary
    (profile `0.1.0`), and `verifier_version "0.1.0"` named in code. These are frozen
@@ -21,7 +21,7 @@ questions, and none of them should be collapsed into another:
 3. **Plugin/distribution** — `package.json` and `.claude-plugin/plugin.json`
    (currently `0.3.0`). This is the companion-skill bundle's own version; it is
    bumped by hand when the bundled skills change and never needs to equal the
-   package version above. `scripts/check_version_coherence.py` gates that these two
+   package version above. `tools/check_version_coherence.py` gates that these two
    manifests agree with *each other*, never that either equals the package version.
 
 A release bumps axis 1. It must never bump axis 2, and it bumps axis 3 only if the
@@ -83,9 +83,9 @@ policy lives in `docs/guides/releasing.md`.
 ```
 python3 -m pip install -r requirements-dev.txt
 python3 -m pytest
-python3 scripts/run_loomground_conformance.py
-python3 scripts/check_version_coherence.py
-python3 scripts/check_adapter_selection_neutrality.py
+python3 tools/run_loomground_conformance.py
+python3 tools/check_version_coherence.py
+python3 tools/check_adapter_selection_neutrality.py
 reuse lint
 python3 -m build
 ```
