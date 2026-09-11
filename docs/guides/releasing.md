@@ -39,7 +39,7 @@ Example release metadata:
 
 ```toml
 # Solver and Versum
-dependencies = ["loomground-governance>=0.8,<0.9"]
+dependencies = ["loomground-governance>=0.8,<0.12"]
 
 # host
 dependencies = [
@@ -167,7 +167,7 @@ Solver and Versum may test against Loomground `main` continuously, but their
 stable distributions should declare a compatible published version:
 
 ```toml
-dependencies = ["loomground-governance>=0.8,<0.9"]
+dependencies = ["loomground-governance>=0.8,<0.12"]
 ```
 
 Testing `main` answers, "Will tomorrow's ecosystem still work?" A stable

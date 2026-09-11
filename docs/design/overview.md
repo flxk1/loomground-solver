@@ -11,7 +11,7 @@ path-solver that writes nothing, and as host's clamped verdict instance.
 The runtime is standard-library-only apart from the data-only
 `loomground-governance` package, consumed from
 [`flxk1/loomground-governance`](https://github.com/flxk1/loomground-governance) as
-a pinned, published version (`>=0.8,<0.9`) — never an unpinned branch, so a
+a pinned, published version (`>=0.8,<0.12`) — never an unpinned branch, so a
 release can always be reinstalled identically.
 
 It can pair with any knowledge graph through the vendor-neutral
@@ -73,7 +73,7 @@ and wire it into host and Versum.
 
 ```bash
 python3 -m pip install -e . --break-system-packages   # or into a venv
-python3 -m pytest -q                                   # expect: 463 passed
+python3 -m pytest -q                                   # expect: 1084 passed
 ```
 
 The two load-bearing gates:
