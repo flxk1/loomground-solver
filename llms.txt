@@ -39,7 +39,7 @@ Contracts: [reasoning-interop](docs/contracts/reasoning-interop.md) · [loomgrou
 ## Family
 Shared reasoning kernel.
 
-- consumes: [loomground-governance](https://github.com/flxk1/loomground-governance) `>=0.8,<0.12` · [loomground-deontic](https://github.com/flxk1/loomground-deontic) `>=0.1,<0.2`
+- consumes: [loomground-governance](https://github.com/flxk1/loomground-governance) `>=0.8,<0.12` · [loomground-deontic](https://github.com/flxk1/loomground-deontic) `>=0.1,<0.3`
 - consumed by: [loomground-versum](https://github.com/flxk1/loomground-versum) (corpus adapter, `reasoning.interop`) · loomground-norm · loomground-legal · the diagnostic operators (brief, collapse, escalation, falsifiability, mandate, proxy) · RVND
 - pipeline: `source → loomground-ingest → loomground-versum → loomground-solver → applied or diagnostic planes`
 
