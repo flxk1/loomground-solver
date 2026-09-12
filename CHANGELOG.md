@@ -2,6 +2,14 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## [0.6.1](https://github.com/flxk1/loomground-solver/compare/solver-v0.6.0...solver-v0.6.1) (2026-09-12)
+
+
+### Documentation
+
+* correct scripts/ paths and stale Loomground pins ([5f674da](https://github.com/flxk1/loomground-solver/commit/5f674da3dab5a0763d4cb61bae576797ebd5f788))
+* correct stale test/vector counts and dependency ranges ([c0f6068](https://github.com/flxk1/loomground-solver/commit/c0f60681ac0dc205a55f710d1958dff3e79f086b))
+
 ## [0.6.0](https://github.com/flxk1/loomground-solver/compare/solver-v0.5.0...solver-v0.6.0) (2026-09-11)
 
 
