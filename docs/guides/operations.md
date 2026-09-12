@@ -44,13 +44,14 @@ The two gate tests are the load-bearing ones:
 
 ## Wire host to import it — and lose nothing (run this in your Terminal)
 
-The host glue lives in the host repo at `loomground-solver-integration/`. Its `rvnd_shims/workspaces/*.py` replace six host module bodies with re-exports from the package, so every old `workspaces.reasoning* / norm_contract / dimensions / solver_topology` import keeps resolving; `reasoning_contract`'s `check_folder_case` is kept in the shim (it still reads `policy`), so host behaviour is identical.
+Host glue belongs in the consuming application. A thin adapter may re-export the
+package API under legacy module paths while keeping host-only policy checks in
+that adapter. The solver imports none of it.
 
 ```bash
 cd /path/to/host/server
 python3 -m pip install -e /path/to/loomground-solver     # make the package importable
-# back up, then drop the shims over the module bodies:
-cp -r ../loomground-solver-integration/rvnd_shims/workspaces/* src/workspaces/
+# install the consuming host's own compatibility adapter, then run its suite
 python3 -m pytest -q                                     # THE FINAL GATE: full host suite green
 ```
 
@@ -77,9 +78,10 @@ The fingerprint and Versum adapters live in the package under
 `loomground_solver.adapters`; there is no separate `integrations/`
 compatibility layer.
 
-In the **host** repo (`loomground-solver-integration/adapters_rvnd/`), with their tests:
-- `RvndNormSource` — `NormSource` over `workspaces.rule_registry.RuleRegistry`.
-- `RvndGovernance` — `Governance` over host: oversight from `policy.load_policy` (level + opt-out), custody from `lock_classify`, audit via `mutation_log.append_raw`; lazy host imports, every dep injectable.
+In the consuming host, with its own tests:
+- a `NormSource` adapter over the host's rule registry;
+- a `Governance` adapter over host oversight, custody, and audit services, with
+  lazy imports and injectable dependencies.
 
 The proofs the adapter tests carry: injecting a `Governance` vs `NullGovernance` **moves the R4 judgment floor** (autonomous → VIOLATION on Esc∧Stake; approve → escalate), and a `NormSource`'s spans **flow into 5D reasoning** (`entail`) end-to-end.
 

@@ -37,7 +37,7 @@ MODULE_API = {
 
 
 @pytest.mark.parametrize("module,names", MODULE_API.items())
-def test_rvnd_compatibility_surface(module, names):
+def test_host_compatibility_surface(module, names):
     imported = importlib.import_module(module)
     missing = sorted(name for name in names if not hasattr(imported, name))
     assert not missing, f"{module} is missing compatibility names: {missing}"

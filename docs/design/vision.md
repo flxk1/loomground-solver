@@ -201,7 +201,7 @@ Built this row (supervised loops, each verified, then adversarially reviewed):
   undetermined coordinates to a bounded escalation set (decision-space discipline).
   `complete` requires the whole structure pinned (determinacy 1.0), never merely
   "nothing escalated."
-- **#1 — the data-pump productization (12, 17).** `adapters_rvnd/datapump_rvnd.py`
+- **#1 — data-pump productization (12, 17).** A host-side data-pump adapter
   (host side, not the universal core): reads the Ed25519 signed audit chain, maps
   events to `harvest` records, re-checks signatures, and emits training data + an
   **autonomy-graded** swap proposal (only an autonomous grade auto-applies; the
