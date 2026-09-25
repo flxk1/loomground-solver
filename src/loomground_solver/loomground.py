@@ -1021,11 +1021,10 @@ def _authorized(patch: dict[str, Any], gate_id: str, actor: Optional[str],
     Authority is conferred by a grant clause — which MAY narrow to particular `kind`
     classes and, over a kind, to a `risk` set (§6) — or by a bare authority cord
     (`cord actor -> gate`, full). With no covering grant the actor is unauthorized and
-    §7.1 step (2) assigns `refused`. `actor is None` means no proposing identity is
-    present (an interior gate reached over a pipe — no identity rides a pipe), so the
-    refused test does not apply there."""
+    §7.1 step (2) assigns `refused`. The proposing actor rides every pipe
+    (§5.1 complete mediation); an activation with no proposing identity holds no grant."""
     if actor is None:
-        return True
+        return False
     grants_here = [g for g in patch.get("grants", [])
                    if g.get("gate") == gate_id and g.get("actor") == actor]
     if not grants_here:
@@ -1050,7 +1049,7 @@ def _gate_own_verdict(patch: dict[str, Any], gate_id: str, token: dict[str, Any]
                       actor: Optional[str] = None) -> str:
     gate = next((nd for nd in patch["nodes"] if nd["id"] == gate_id), {})
     floor = gate.get("risk_floor", "low")
-    eff_risk = RISKS[max(RISK_RANK.get(token.get("risk", "low"), 0), RISK_RANK.get(floor, 0))]
+    eff_risk = RISKS[max(RISK_RANK.get(token.get("risk"), len(RISKS) - 1), RISK_RANK.get(floor, 0))]
     kind = token.get("kind")
     # §7.1 assignment priority: prohibited > refused > reserved > auto/human
     for p in patch.get("prohibitions", []):
@@ -1095,13 +1094,16 @@ def evaluate_log(patch: dict[str, Any], transport: dict[str, Any]) -> list[dict[
 def _evaluate_with_log(
     patch: dict[str, Any], transport: dict[str, Any]
 ) -> tuple[dict[str, Any], list[dict[str, str]]]:
-    # pipe successors and egress set
-    succ: dict[str, str] = {}
+    by_id = {nd["id"]: nd for nd in patch.get("nodes", [])}
+    decl_pos = {nid: i for i, nid in enumerate(by_id)}
+    succ: dict[str, list[str]] = {}
+    preds: dict[str, list[str]] = {}
     egress: set[str] = set()
     for c in patch.get("cords", []):
-        t = c.get("type") or _classify(c, {nd["id"]: nd for nd in patch["nodes"]})
+        t = c.get("type") or _classify(c, by_id)
         if t == "pipe":
-            succ[c["from"]] = c["to"]
+            succ.setdefault(c["from"], []).append(c["to"])
+            preds.setdefault(c["to"], []).append(c["from"])
         elif t == "egress":
             egress.add(c["from"])
     oblig_gates = {o["on"] for o in patch.get("obligations", [])}
@@ -1113,38 +1115,57 @@ def _evaluate_with_log(
     # assumed true.
     obligations_attached = oblig_gates.issubset(egress)
 
-    by_id = {nd["id"]: nd for nd in patch.get("nodes", [])}
     result: dict[str, Any] = {}
     log: list[dict[str, str]] = []
     for act in transport.get("activations", []):
-        token = act["token"]
-        cur = act["source"]
-        eff = _gate_own_verdict(patch, cur, token, act.get("actor"))
-        # v0.6 §7.1 step-(4): at the SOURCE gate the auto/human disposition is gated by
-        # grade when the gate declares a required grade R. Only an 'auto' own verdict is
-        # graded — prohibited/refused/reserved keep precedence (steps 1-3). G≥R ⇒ auto;
-        # G<R or an ungraded proposing actor ⇒ human (fail-closed); no R ⇒ unchanged.
-        R = (by_id.get(cur) or {}).get("grade_required")
-        if eff == "auto" and R is not None:
-            G = (by_id.get(act.get("actor")) or {}).get("grade")
-            if not grade_meets(G, R):       # shared authority — same rule the app run-path uses
-                eff = "human"
-        # record source gate's own verdict (its effective verdict: no predecessor)
-        result.setdefault(cur, {})["verdict"] = eff
-        log.append({"gate": cur, "verdict": eff})
-        # propagate along the pipe chain to the terminal gate; each activated
-        # gate logs its effective verdict (§7.4), in evaluation order
-        while cur in succ:
-            nxt = succ[cur]
-            own = _gate_own_verdict(patch, nxt, token)
-            eff = _join(eff, own)
-            result.setdefault(nxt, {})["verdict"] = eff
-            log.append({"gate": nxt, "verdict": eff})
-            cur = nxt
-        # cur is terminal; if it egresses, the master decides
-        if cur in egress:
-            release = (eff == "auto") and obligations_attached
-            result.setdefault(cur, {})["master"] = "act" if release else "withhold"
+        token = act.get("token") if isinstance(act, dict) else None
+        if not validate_token(token):
+            continue
+        src = act["source"]
+        actor = act.get("actor")
+        reach: set[str] = set()
+        stack = [src]
+        while stack:
+            u = stack.pop()
+            if u not in reach:
+                reach.add(u)
+                stack.extend(succ.get(u, []))
+        eff: dict[str, str] = {}
+
+        def effective(g: str) -> str:
+            if g in eff:
+                return eff[g]
+            v = _gate_own_verdict(patch, g, token, actor)
+            # §7.1 step (4): grade is compared at the SOURCE gate only. Only an 'auto'
+            # own verdict is graded — prohibited/refused/reserved keep precedence.
+            # G≥R ⇒ auto; G<R or an ungraded proposing actor ⇒ human (fail-closed).
+            if g == src and v == "auto":
+                R = (by_id.get(g) or {}).get("grade_required")
+                if R is not None and not grade_meets((by_id.get(actor) or {}).get("grade"), R):
+                    v = "human"
+            for h in preds.get(g, []):
+                if h in reach:
+                    v = _join(v, effective(h))
+            eff[g] = v
+            return v
+
+        # §7.4 evaluation order: predecessors first, ties by declaration order
+        indeg = {g: sum(1 for h in preds.get(g, []) if h in reach) for g in reach}
+        order_key = lambda g: decl_pos.get(g, len(decl_pos))  # noqa: E731
+        ready = sorted((g for g in reach if indeg[g] == 0), key=order_key)
+        while ready:
+            g = ready.pop(0)
+            v = effective(g)
+            result.setdefault(g, {})["verdict"] = v
+            log.append({"gate": g, "verdict": v})
+            if g in egress:
+                result[g]["master"] = "act" if (v == "auto" and obligations_attached) else "withhold"
+            for t in succ.get(g, []):
+                if t in reach:
+                    indeg[t] -= 1
+                    if indeg[t] == 0:
+                        ready.append(t)
+            ready.sort(key=order_key)
     return result, log
 
 
