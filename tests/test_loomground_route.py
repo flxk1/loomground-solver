@@ -255,3 +255,79 @@ def test_unattached_obligation_withhold_reports_auto_as_the_reason():
     assert result["rejected"] == {"t1": "auto"}
     assert result["trace"]["evaluation"]["b"] == {"verdict": "auto", "master": "withhold"}
     assert result["trace"]["evaluation"]["c"] == {"verdict": "auto", "master": "withhold"}
+
+
+# ── fuzz: every activation-derived value reason()/PROM-001 dereference ──────────
+# .get, indexing, iteration, RISK_RANK-style membership, hashing — must fail
+# closed to "invalid" for a malformed shape, never raise, never abort the batch,
+# and must never let a token slip past governance ungoverned (risk_table path).
+#
+# A generic non-dict/non-list/None/int/str sweep is used everywhere a value
+# must be a MAPPING (the activation, the token) or a MEMBER of a fixed table
+# (risk/reversibility/uncertainty/provenance, where a wrong-typed value and a
+# wrong *string* are equally invalid). Free-text string fields (source/actor/
+# id/kind/party/observed.*) legitimately accept ANY string — "junk" there is
+# a normal, if meaningless, value (an unknown gate id just "refused"s, it
+# does not crash) — so those sweeps drop the bare string and, where the
+# field is itself OPTIONAL (actor, token.tags), drop ``None`` too.
+# ``observed.*`` only matters on the risk_table path (§ absent risk_table,
+# `observed` is never read) — those cases are risk_table-only.
+_GENERIC = ("junk", 123, None, [1, 2], {}, True, {"nested": "x"})
+_NON_STRING = tuple(v for v in _GENERIC if v != "junk")
+_NON_STRING_NONE_OK = tuple(v for v in _NON_STRING if v is not None)
+BOTH = ({}, {"risk_table": GovernedRiskTable()})
+RISK_TABLE_ONLY = ({"risk_table": GovernedRiskTable()},)
+
+
+def _malformed_token():
+    return {"id": "bad", "kind": "act", "risk": "low",
+            "party": "deployer", "provenance": []}
+
+
+def _valid_sibling():
+    return {"actor": "a", "source": "src", "token": {
+        "id": "sibling", "kind": "act", "risk": "low",
+        "party": "deployer", "provenance": []}}
+
+
+def _fanout_fuzz_cases():
+    cases = []
+
+    def add(label, value, act, kwargs_variants):
+        for kwargs in kwargs_variants:
+            cases.append((label, value, act, kwargs))
+
+    for v in _GENERIC:
+        add("activation", v, v, BOTH)
+        add("token", v, {"actor": "a", "source": "src", "token": v}, BOTH)
+    for v in _NON_STRING:
+        add("source", v, {"actor": "a", "source": v, "token": _malformed_token()}, BOTH)
+        for field in ("id", "kind", "party"):
+            add(f"token.{field}", v, {"actor": "a", "source": "src",
+                                       "token": {**_malformed_token(), field: v}}, BOTH)
+    for v in _NON_STRING_NONE_OK:
+        add("actor", v, {"actor": v, "source": "src", "token": _malformed_token()}, BOTH)
+        for field in ("kind", "target", "context", "grade"):
+            add(f"observed.{field}", v, {"actor": "a", "source": "src",
+                                          "token": _malformed_token(),
+                                          "observed": {field: v}}, RISK_TABLE_ONLY)
+    for v in _GENERIC:  # membership/list fields: a wrong string is exactly as invalid as a wrong type
+        for field in ("risk", "provenance", "reversibility", "uncertainty"):
+            add(f"token.{field}", v, {"actor": "a", "source": "src",
+                                       "token": {**_malformed_token(), field: v}}, BOTH)
+    for v in _NON_STRING_NONE_OK:  # tags: absent/None is legal, everything else must be list[str]
+        add("token.tags", v, {"actor": "a", "source": "src",
+                               "token": {**_malformed_token(), "tags": v}}, BOTH)
+    return cases
+
+
+@pytest.mark.parametrize("label, value, malformed_activation, risk_table_kwargs",
+                          _fanout_fuzz_cases(), ids=lambda x: repr(x)[:40])
+def test_malformed_activation_fields_never_crash_and_reject_invalid(
+        label, value, malformed_activation, risk_table_kwargs):
+    run = {"activations": [malformed_activation, _valid_sibling()]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run, **risk_table_kwargs)
+    assert result["accepted"] == ["sibling"]
+    assert result["undecided"] == []
+    assert len(result["rejected"]) == 1
+    assert list(result["rejected"].values()) == ["invalid"]

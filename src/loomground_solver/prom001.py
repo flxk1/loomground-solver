@@ -151,8 +151,11 @@ def govern_token(declared: Mapping[str, Any], observation: HostObservation,
             risk = computed
             hint = declared.get("risk")
             # a self-declared hint is admitted ONLY as a monotonic raise-only
-            # ratchet — it may raise the computed tier, never lower it.
-            if hint in RISK_RANK and RISK_RANK[hint] > RISK_RANK[risk]:
+            # ratchet — it may raise the computed tier, never lower it. `hint`
+            # is untrusted (declared, ungoverned) shape: guard the type before
+            # the RISK_RANK membership test, or an unhashable hint (a list, a
+            # dict, ...) would raise instead of simply failing to be admitted.
+            if isinstance(hint, str) and hint in RISK_RANK and RISK_RANK[hint] > RISK_RANK[risk]:
                 risk = hint
 
     token = dict(declared)
