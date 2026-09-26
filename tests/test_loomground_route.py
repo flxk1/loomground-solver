@@ -2,6 +2,7 @@ import pytest
 
 from loomground_solver import METHODS, method, methods_by_kind, reason_loomground
 from loomground_solver.loomground import ApplyError, apply, parse, project
+from loomground_solver.prom001 import GovernedRiskTable
 
 
 AUTO = """\
@@ -219,6 +220,32 @@ cord src -> c
 cord b -> master
 cord c -> master
 """
+
+
+def test_non_dict_activation_with_risk_table_is_rejected_not_a_crash():
+    run = {"activations": [
+        ["x"],
+        {"actor": "a", "source": "src", "token": {
+            "id": "t1", "kind": "act", "risk": "low",
+            "party": "deployer", "provenance": []}},
+    ]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run, risk_table=GovernedRiskTable())
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert result["accepted"] == ["t1"]
+    assert result["undecided"] == []
+
+
+def test_non_dict_token_with_risk_table_is_rejected_not_a_crash():
+    run = {"activations": [
+        {"actor": "a", "source": "src", "token": "junk"},
+        {"actor": "a", "source": "src", "token": {
+            "id": "t1", "kind": "act", "risk": "low",
+            "party": "deployer", "provenance": []}},
+    ]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run, risk_table=GovernedRiskTable())
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert result["accepted"] == ["t1"]
+    assert result["undecided"] == []
 
 
 def test_unattached_obligation_withhold_reports_auto_as_the_reason():
