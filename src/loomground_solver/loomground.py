@@ -1285,9 +1285,11 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     reaches, fail-closed over the fan-out: accepted only when EVERY reached
     terminal's master is ``act``; otherwise undecided if any reached
     terminal's effective verdict is ``human`` or ``reserved``; otherwise
-    (the non-acting terminals are all ``refused``/``prohibited``) rejected,
-    with the strictest such verdict as the reason. A token failing
-    validation is rejected with reason ``invalid``.
+    rejected, with the strictest verdict among the non-acting reached
+    terminals as the reason — usually ``refused``/``prohibited``, but this
+    can be ``auto`` when a terminal withholds because an egress obligation
+    is not attached. A non-dict activation, a non-dict token, or a token
+    failing validation is rejected with reason ``invalid``.
 
     ``risk_table`` is an OPTIONAL ``prom001.GovernedRiskTable`` (PROM-001,
     v0.11.0, §4/§7.4): when supplied, an activation carrying an ``observed``
@@ -1339,7 +1341,11 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     accepted, undecided, rejected = [], [], {}
 
     for index, activation in enumerate(transport.get("activations", [])):
-        token = activation.get("token") or {}
+        if not isinstance(activation, dict):
+            rejected[f"activation-{index + 1}"] = "invalid"
+            continue
+        token = activation.get("token")
+        token = token if isinstance(token, dict) else {}
         action_id = str(token.get("id") or f"activation-{index + 1}")
         if not validate_token(token):
             rejected[action_id] = "invalid"
