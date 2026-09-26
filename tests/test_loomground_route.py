@@ -172,3 +172,59 @@ def test_single_path_refused_verdict_is_still_rejected():
     assert result["accepted"] == []
     assert result["undecided"] == []
     assert result["rejected"] == {"t1": "refused"}
+
+
+def test_non_dict_token_is_rejected_invalid_not_a_crash():
+    run = {"activations": [
+        {"actor": "a", "source": "src", "token": "junk"},
+    ]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run)
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {"activation-1": "invalid"}
+
+
+def test_non_dict_activation_is_rejected_invalid_not_a_crash():
+    run = {"activations": [["x"], "junk", None]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run)
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {
+        "activation-1": "invalid", "activation-2": "invalid", "activation-3": "invalid",
+    }
+
+
+def test_malformed_activations_do_not_abort_the_batch():
+    run = {"activations": [
+        {"actor": "a", "source": "src", "token": ["x"]},
+        {"actor": "a", "source": "src", "token": {
+            "id": "t1", "kind": "act", "risk": "low",
+            "party": "deployer", "provenance": []}},
+    ]}
+    result = reason_loomground(FANOUT_BOTH_ACT, run)
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert result["accepted"] == ["t1"]
+    assert result["undecided"] == []
+
+
+OBLIGATION_UNATTACHED = """\
+actor a
+gate src risk low grant a
+gate b risk low grant a
+gate c risk low grant a
+obligation log on src
+cord a -> src
+cord src -> b
+cord src -> c
+cord b -> master
+cord c -> master
+"""
+
+
+def test_unattached_obligation_withhold_reports_auto_as_the_reason():
+    result = reason_loomground(OBLIGATION_UNATTACHED, fanout_transport())
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {"t1": "auto"}
+    assert result["trace"]["evaluation"]["b"] == {"verdict": "auto", "master": "withhold"}
+    assert result["trace"]["evaluation"]["c"] == {"verdict": "auto", "master": "withhold"}
