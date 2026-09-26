@@ -601,8 +601,9 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
                     f"non-terminal gate is ill-formed (§6)")
 
     # §6/§7.1 autonomy grade (v0.6) — apply stage. A grade must be a level on the active
-    # ladder; a REQUIRED grade may sit only on a SOURCE gate (no incoming pipe), since
-    # the proposing actor is the recorded cause only there (no identity rides a pipe).
+    # ladder; a REQUIRED grade may sit only on a SOURCE gate (no incoming pipe): the
+    # grade comparison is evaluated only at a source gate, so the threshold is
+    # gate-owned and never inherited by a downstream (piped) gate.
     _piped_to = {b for (_a, b) in pipe_edges}
     _by_id = {nd["id"]: nd for nd in patch.get("nodes", [])}
     for nd in patch.get("nodes", []):
@@ -1074,9 +1075,10 @@ def _join(a: str, b: str) -> str:
 def evaluate(patch: dict[str, Any], transport: dict[str, Any]) -> dict[str, Any]:
     """Evaluate activations -> {gate: {verdict, [master: act|withhold]}}.
 
-    Each activation enters at a source gate; the effective verdict joins
-    strictest-wins along pipes to the terminal gate; the master acts iff the
-    terminal effective verdict is auto and every egress obligation is attached.
+    Each activation enters at a source gate and reaches every gate connected by
+    a pipe from it, joining strictest-wins along each path; at each terminal
+    (egressing) gate so reached, the master acts iff that gate's effective
+    verdict is auto and every egress obligation is attached.
     """
     result, _ = _evaluate_with_log(patch, transport)
     return result
