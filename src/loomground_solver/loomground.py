@@ -1325,13 +1325,20 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     becomes host-observed (never the actor's claim), its `risk` is
     gate-computed from the table with a self-declared hint admitted only as a
     raise-only ratchet, and an unclassifiable observation or a declared/
-    observed mismatch floors it to the strictest tier. Absent `risk_table` (the
-    default), or an activation with no `observed` key, behaviour is
-    byte-for-byte unchanged from before PROM-001 — this is a strictly additive
-    capability, never a silent reinterpretation of an existing token. The dual
-    log — both the declared token and the host-observed facts, per activation —
-    lands in ``trace["prom001"]`` (§7.4); it is solver-internal and is not part
-    of the language's own observation/log schemas.
+    observed mismatch floors it to the strictest tier. The declared token
+    itself MUST pass ``validate_token`` before governance runs (SPEC §4
+    MUST-reject; §7.4 logs the declared token beside the observation) — a
+    missing/non-string `kind`, a `risk` outside the declared scale, or any
+    other ``validate_token`` failure is rejected ``invalid`` instead of being
+    governed; a well-formed declared token is governed exactly as before,
+    regardless of how wrong its claimed `kind`/`risk` turns out to be against
+    the observation. Absent `risk_table` (the default), or an activation with
+    no `observed` key, behaviour is byte-for-byte unchanged from before
+    PROM-001 — this is a strictly additive capability, never a silent
+    reinterpretation of an existing token. The dual log — both the declared
+    token and the host-observed facts, per activation — lands in
+    ``trace["prom001"]`` (§7.4); it is solver-internal and is not part of the
+    language's own observation/log schemas.
     """
     patch = apply(source_or_patch)
     observation = project(patch)
@@ -1363,6 +1370,16 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
                 observed.get(f) is not None and not isinstance(observed.get(f), str)
                 for f in ("kind", "target", "context", "grade")
             ):
+                governed_activations.append(None)
+                continue
+            # SPEC §4 MUST-reject / §7.4: the declared token logged beside the
+            # observation is itself required to be well-formed (Felix, PROM-001
+            # design decision) — a missing/non-string kind, a risk outside the
+            # declared scale, or any other validate_token() failure is rejected
+            # "invalid" BEFORE governance runs, never governed on a malformed
+            # declaration. A well-formed declared token is governed exactly as
+            # before (host-observed kind/risk, unaffected by this gate).
+            if not validate_token(act["token"]):
                 governed_activations.append(None)
                 continue
             host_observation = HostObservation(
