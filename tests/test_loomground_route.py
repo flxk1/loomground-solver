@@ -72,3 +72,103 @@ def test_apply_fails_closed_and_observation_is_canonical():
         apply("gate a\ngate b\ncord a -> b\ncord b -> a\n")
     patch = apply(AUTO)
     assert project(patch) == project(parse(AUTO))
+
+
+FANOUT = """\
+actor a
+gate src risk low grant a
+gate b risk high grant a
+gate c risk low grant a
+reserve act by safety when risk >= high
+cord a -> src
+cord src -> b
+cord src -> c
+cord b -> master
+cord c -> master
+"""
+
+FANOUT_BOTH_ACT = FANOUT.replace("reserve act by safety when risk >= high\n", "") \
+    .replace("gate b risk high grant a", "gate b risk low grant a")
+
+FANOUT_ONE_REFUSED = FANOUT.replace("reserve act by safety when risk >= high\n", "") \
+    .replace("gate b risk high grant a", "gate b risk low")
+
+
+def fanout_transport(token_id="t1"):
+    return {"activations": [{
+        "actor": "a", "source": "src",
+        "token": {"id": token_id, "kind": "act", "risk": "low",
+                  "party": "deployer", "provenance": []},
+    }]}
+
+
+def test_fanout_one_reserved_terminal_is_undecided():
+    result = reason_loomground(FANOUT, fanout_transport())
+    assert result["accepted"] == []
+    assert result["undecided"] == ["t1"]
+    assert result["rejected"] == {}
+    assert result["trace"]["evaluation"]["b"] == {"verdict": "reserved", "master": "withhold"}
+    assert result["trace"]["evaluation"]["c"] == {"verdict": "auto", "master": "act"}
+
+
+def test_fanout_every_terminal_acting_is_accepted():
+    result = reason_loomground(FANOUT_BOTH_ACT, fanout_transport())
+    assert result["accepted"] == ["t1"]
+    assert result["undecided"] == []
+    assert result["rejected"] == {}
+
+
+def test_fanout_one_refused_terminal_is_rejected_refused():
+    result = reason_loomground(FANOUT_ONE_REFUSED, fanout_transport())
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {"t1": "refused"}
+
+
+def test_invalid_token_is_rejected_with_reason_invalid():
+    transport = fanout_transport()
+    transport["activations"][0]["token"]["risk"] = "not-a-risk-level"
+    result = reason_loomground(FANOUT_BOTH_ACT, transport)
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {"t1": "invalid"}
+
+
+SINGLE_RESERVED = """\
+actor bot
+gate decide risk high grant bot
+reserve act by safety when risk >= high
+cord bot -> decide
+cord decide -> master
+"""
+
+SINGLE_REFUSED = """\
+actor bot
+gate src risk low grant bot
+gate decide risk low
+cord bot -> src
+cord src -> decide
+cord decide -> master
+"""
+
+
+def single_refused_transport(token_id="t1"):
+    return {"activations": [{
+        "actor": "bot", "source": "src",
+        "token": {"id": token_id, "kind": "act", "risk": "low",
+                  "party": "deployer", "provenance": []},
+    }]}
+
+
+def test_single_path_reserved_verdict_is_still_undecided():
+    result = reason_loomground(SINGLE_RESERVED, transport())
+    assert result["accepted"] == []
+    assert result["undecided"] == ["t1"]
+    assert result["rejected"] == {}
+
+
+def test_single_path_refused_verdict_is_still_rejected():
+    result = reason_loomground(SINGLE_REFUSED, single_refused_transport())
+    assert result["accepted"] == []
+    assert result["undecided"] == []
+    assert result["rejected"] == {"t1": "refused"}

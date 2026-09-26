@@ -1281,9 +1281,13 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
            risk_table: Optional[Any] = None) -> dict[str, Any]:
     """Run Loomground as a Solver nD route.
 
-    The generic partitions retain the richer language verdicts in ``trace``:
-    ``auto`` actions are accepted, ``human``/``reserved`` actions are undecided,
-    and ``refused``/``prohibited`` actions are rejected.
+    The generic partitions read every terminal (egress) gate an activation
+    reaches, fail-closed over the fan-out: accepted only when EVERY reached
+    terminal's master is ``act``; otherwise undecided if any reached
+    terminal's effective verdict is ``human`` or ``reserved``; otherwise
+    (the non-acting terminals are all ``refused``/``prohibited``) rejected,
+    with the strictest such verdict as the reason. A token failing
+    validation is rejected with reason ``invalid``.
 
     ``risk_table`` is an OPTIONAL ``prom001.GovernedRiskTable`` (PROM-001,
     v0.11.0, §4/§7.4): when supplied, an activation carrying an ``observed``
@@ -1337,23 +1341,29 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     for index, activation in enumerate(transport.get("activations", [])):
         token = activation.get("token") or {}
         action_id = str(token.get("id") or f"activation-{index + 1}")
+        if not validate_token(token):
+            rejected[action_id] = "invalid"
+            continue
         single = evaluate(patch, {"activations": [activation]})
         terminals = [
             (gate, outcome) for gate, outcome in single.items()
             if "master" in outcome
         ]
-        if any(outcome.get("master") == "act" for _gate, outcome in terminals):
+        if terminals and all(outcome.get("master") == "act" for _gate, outcome in terminals):
             accepted.append(action_id)
             continue
-        verdicts = [outcome.get("verdict") for _gate, outcome in terminals]
-        verdict = max(
-            (v for v in verdicts if v in VERDICT_RANK),
-            key=VERDICT_RANK.get,
-            default="refused",
-        )
-        if verdict in ("human", "reserved"):
+        non_acting = [
+            outcome.get("verdict") for _gate, outcome in terminals
+            if outcome.get("master") != "act"
+        ]
+        if any(v in ("human", "reserved") for v in non_acting):
             undecided.append(action_id)
         else:
+            verdict = max(
+                (v for v in non_acting if v in VERDICT_RANK),
+                key=VERDICT_RANK.get,
+                default="refused",
+            )
             rejected[action_id] = verdict
 
     trace: dict[str, Any] = {

@@ -123,9 +123,13 @@ the standard request shape:
 }
 ```
 
-The result maps released token IDs to `accepted`, `human`/`reserved` token IDs
-to `undecided`, and `refused`/`prohibited` token IDs to `rejected`. The complete
-canonical observation, gate evaluation and ordered Loomground log remain in the
+The result reads every terminal (egress) gate a token's activation reaches:
+a token ID maps to `accepted` only when EVERY reached terminal's master is
+`act`; to `undecided` when any reached terminal's effective verdict is
+`human`/`reserved`; otherwise to `rejected`, with the strictest of the
+non-acting `refused`/`prohibited` verdicts as the reason (a token failing
+validation is rejected with reason `invalid`). The complete canonical
+observation, gate evaluation and ordered Loomground log remain in the
 signed trace.
 
 Loomground is a Solver language route, not a graph extension. Graphs remain
