@@ -962,7 +962,11 @@ def validate_token(token: Any) -> bool:
     for f in ("id", "kind", "party"):
         if not isinstance(token.get(f), str):
             return False
-    if token.get("risk") not in RISK_RANK:
+    # `not in <dict>` requires a hashable key — guard the type before the
+    # membership test so an unhashable declared value (a list, a dict, ...)
+    # fails closed instead of raising TypeError.
+    risk = token.get("risk")
+    if not isinstance(risk, str) or risk not in RISK_RANK:
         return False
     prov = token.get("provenance")
     if not isinstance(prov, list) or not all(isinstance(x, str) for x in prov):
@@ -975,11 +979,31 @@ def validate_token(token: Any) -> bool:
     # properties (schema/token.schema.json) — absent is valid (no >= guard ever
     # matches an absent level, §4); when present each MUST be a level on its
     # active scale.
-    if "reversibility" in token and token["reversibility"] not in REVERSIBILITY_RANK:
-        return False
-    if "uncertainty" in token and token["uncertainty"] not in UNCERTAINTY_RANK:
-        return False
+    if "reversibility" in token:
+        rv = token["reversibility"]
+        if not isinstance(rv, str) or rv not in REVERSIBILITY_RANK:
+            return False
+    if "uncertainty" in token:
+        un = token["uncertainty"]
+        if not isinstance(un, str) or un not in UNCERTAINTY_RANK:
+            return False
     return True
+
+
+def _valid_activation_shape(activation: Any) -> bool:
+    """Is `activation` a dict with a `source` string, an optional string
+    `actor`, and a token that passes `validate_token`? Guards every field
+    `_evaluate_with_log`/`reason()` dereference off an activation before
+    they do — a malformed `source`/`actor` (missing, wrong type, unhashable)
+    must never reach a `dict` lookup or a `set` membership test unguarded."""
+    if not isinstance(activation, dict):
+        return False
+    if not isinstance(activation.get("source"), str):
+        return False
+    actor = activation.get("actor")
+    if actor is not None and not isinstance(actor, str):
+        return False
+    return validate_token(activation.get("token"))
 
 
 # ── §5 transport: evaluate the policy graph for given activations ───────────────
@@ -1120,9 +1144,9 @@ def _evaluate_with_log(
     result: dict[str, Any] = {}
     log: list[dict[str, str]] = []
     for act in transport.get("activations", []):
-        token = act.get("token") if isinstance(act, dict) else None
-        if not validate_token(token):
+        if not _valid_activation_shape(act):
             continue
+        token = act["token"]
         src = act["source"]
         actor = act.get("actor")
         reach: set[str] = set()
@@ -1288,8 +1312,12 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     rejected, with the strictest verdict among the non-acting reached
     terminals as the reason — usually ``refused``/``prohibited``, but this
     can be ``auto`` when a terminal withholds because an egress obligation
-    is not attached. A non-dict activation, a non-dict token, or a token
-    failing validation is rejected with reason ``invalid``.
+    is not attached. A non-dict activation, a non-dict/malformed ``source``
+    or ``actor``, a non-dict token, or a token failing validation is
+    rejected with reason ``invalid`` — never a crash, never aborting the
+    rest of the batch. With ``risk_table`` supplied, a malformed
+    ``observed`` is rejected the same way rather than bypassing governance
+    ungoverned (below).
 
     ``risk_table`` is an OPTIONAL ``prom001.GovernedRiskTable`` (PROM-001,
     v0.11.0, §4/§7.4): when supplied, an activation carrying an ``observed``
@@ -1324,13 +1352,26 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
             if observed is None:
                 governed_activations.append(act)
                 continue
+            # `observed` (and its kind/target/context/grade) is host-supplied
+            # but still untrusted shape at this boundary — anything other than
+            # the declared dict-of-strings shape must NOT reach govern_token
+            # (dereferencing it, or hashing an unhashable field in the risk-
+            # table lookup, would crash) and must NOT bypass governance by
+            # passing through ungoverned either: null the slot so the main
+            # loop below rejects it as "invalid".
+            if not isinstance(observed, dict) or any(
+                observed.get(f) is not None and not isinstance(observed.get(f), str)
+                for f in ("kind", "target", "context", "grade")
+            ):
+                governed_activations.append(None)
+                continue
             host_observation = HostObservation(
                 kind=observed.get("kind"), target=observed.get("target", ""),
                 context=observed.get("context", ""), grade=observed.get("grade"),
             )
-            governed = govern_token(act.get("token") or {}, host_observation, risk_table)
+            governed = govern_token(act["token"], host_observation, risk_table)
             prom001_log.append({
-                "activation": (act.get("token") or {}).get("id"),
+                "activation": act["token"].get("id"),
                 "declared": governed.declared,
                 "observed": governed.observed,
                 "kind": governed.kind,
@@ -1346,13 +1387,10 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     accepted, undecided, rejected = [], [], {}
 
     for index, activation in enumerate(transport.get("activations", [])):
-        if not isinstance(activation, dict):
-            rejected[f"activation-{index + 1}"] = "invalid"
-            continue
-        token = activation.get("token")
+        token = activation.get("token") if isinstance(activation, dict) else None
         token = token if isinstance(token, dict) else {}
         action_id = str(token.get("id") or f"activation-{index + 1}")
-        if not validate_token(token):
+        if not _valid_activation_shape(activation):
             rejected[action_id] = "invalid"
             continue
         single = evaluate(patch, {"activations": [activation]})
