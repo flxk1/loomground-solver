@@ -34,7 +34,7 @@ loomground-solver/
 cd loomground-solver
 python3 -m pip install -e . --break-system-packages   # or into a venv
 python3 -m pytest -q                                   # expect: 1084 passed
-python3 tools/run_loomground_conformance.py           # expect: 65/65 vectors passed
+python3 tools/run_loomground_conformance.py           # expect: 69/69 vectors passed
 python3 -m build                                        # build sdist + wheel
 ```
 
