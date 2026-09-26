@@ -16,7 +16,7 @@ authors = [{ name = "Loomground Contributors" }]
 # transitive closure is declared, because those tagged commits still carry ranges that
 # only these URLs can satisfy.
 dependencies = [
-    "loomground-governance @ git+https://github.com/flxk1/loomground-governance@loomground-governance-v0.11.1",
+    "loomground-governance @ git+https://github.com/flxk1/loomground-governance@loomground-governance-v0.11.2",
     "loomground-deontic @ git+https://github.com/flxk1/loomground-deontic@loomground-deontic-v0.2.1",
 ]
 
