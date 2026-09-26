@@ -143,7 +143,12 @@ def test_reason_integration_is_additive_and_carries_the_dual_log():
     )
     activation = {
         "actor": "bot", "source": "decide",
-        "token": {"id": "t10", "kind": "deploy_model", "party": "deployer", "provenance": []},
+        # `risk` is required for validate_token to pass PROM-001's declared-
+        # token gate (Felix's decision) - "low" is below the table's computed
+        # "medium" for this (kind, target, context, grade), so the raise-only
+        # ratchet has no effect and governance stays byte-identical.
+        "token": {"id": "t10", "kind": "deploy_model", "risk": "low",
+                   "party": "deployer", "provenance": []},
         "observed": {"kind": "deploy_model", "target": "prod", "context": "eu", "grade": "L3"},
     }
     # without a risk_table: unchanged behaviour — no prom001 trace, no governance
@@ -160,3 +165,83 @@ def test_reason_integration_is_additive_and_carries_the_dual_log():
     # the gate's floor is "low"; the governed token's risk ("medium") is what
     # the evaluation actually used — reflected in the (unaffected) verdict path.
     assert governed["trace"]["evaluation"]["decide"]["verdict"] == "auto"
+
+
+# ── 6. the declared token itself must be well-formed (SPEC §4 MUST-reject) ──
+
+_GATED_SOURCE = (
+    "actor bot\n"
+    "gate decide risk low grant bot\n"
+    "cord bot -> decide\n"
+    "cord decide -> master\n"
+)
+
+
+def _gated_run(bad_token):
+    sibling = {
+        "actor": "bot", "source": "decide",
+        "token": {"id": "sibling", "kind": "deploy_model", "risk": "low",
+                  "party": "deployer", "provenance": []},
+        "observed": {"kind": "deploy_model", "target": "prod", "context": "eu", "grade": "L3"},
+    }
+    bad = {
+        "actor": "bot", "source": "decide", "token": bad_token,
+        "observed": {"kind": "deploy_model", "target": "prod", "context": "eu", "grade": "L3"},
+    }
+    return reason(_GATED_SOURCE, {"activations": [bad, sibling]}, risk_table=TABLE)
+
+
+def test_declared_token_missing_kind_is_rejected_invalid_not_governed():
+    result = _gated_run({"id": "t11", "risk": "low", "party": "deployer", "provenance": []})
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert result["accepted"] == ["sibling"]
+    assert all(e["activation"] != "t11" for e in result["trace"].get("prom001", []))
+
+
+def test_declared_token_non_string_kind_is_rejected_invalid_not_governed():
+    result = _gated_run({"id": "t12", "kind": [1], "risk": "low",
+                          "party": "deployer", "provenance": []})
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert all(e["activation"] != "t12" for e in result["trace"].get("prom001", []))
+
+
+def test_declared_token_bogus_risk_is_rejected_invalid_not_governed():
+    result = _gated_run({"id": "t13", "kind": "deploy_model", "risk": "bogus",
+                          "party": "deployer", "provenance": []})
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert all(e["activation"] != "t13" for e in result["trace"].get("prom001", []))
+
+
+def test_declared_token_missing_risk_is_rejected_invalid_not_governed():
+    result = _gated_run({"id": "t14", "kind": "deploy_model",
+                          "party": "deployer", "provenance": []})
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert all(e["activation"] != "t14" for e in result["trace"].get("prom001", []))
+
+
+def test_declared_token_gate_never_aborts_the_batch_sibling_still_governed():
+    result = _gated_run({"id": "t15", "risk": "low", "party": "deployer", "provenance": []})
+    assert result["rejected"] == {"activation-1": "invalid"}
+    assert result["accepted"] == ["sibling"]
+    assert result["trace"]["prom001"][0]["activation"] == "sibling"
+    assert result["trace"]["prom001"][0]["kind"] == "deploy_model"
+    assert result["trace"]["prom001"][0]["risk"] == "medium"
+
+
+def test_well_formed_declared_token_with_mismatched_kind_still_governed_as_before():
+    # a WELL-FORMED declared token whose claimed `kind` disagrees with the
+    # host observation is exactly what PROM-001 governs (not a shape
+    # rejection) — this must be byte-identical to the pre-gate behaviour.
+    activation = {
+        "actor": "bot", "source": "decide",
+        "token": {"id": "t16", "kind": "read_metadata", "risk": "low",
+                  "party": "deployer", "provenance": []},
+        "observed": {"kind": "deploy_model", "target": "prod", "context": "eu", "grade": "L3"},
+    }
+    result = reason(_GATED_SOURCE, {"activations": [activation]}, risk_table=TABLE)
+    entry = result["trace"]["prom001"][0]
+    assert entry["declared"]["kind"] == "read_metadata"
+    assert entry["observed"]["kind"] == "deploy_model"
+    assert entry["kind"] == "deploy_model"          # host-observed governs, unaffected by the gate
+    assert entry["risk"] == STRICTEST_RISK           # declared/observed mismatch still floors, as before
+    assert entry["floored"]

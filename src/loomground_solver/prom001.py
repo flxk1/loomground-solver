@@ -22,6 +22,14 @@ IMPLEMENTATION must do to arrive at those two values before a token reaches
 - **Dual log (§7.4):** the record carries BOTH the declared token and the
   host-observed facts, so a later redress weighs the claim against the
   observation rather than a reconciled summary.
+- **The declared token must itself be well-formed (SPEC §4 MUST-reject).**
+  ``reason()`` (the Solver route, ``loomground.py``) runs ``validate_token``
+  on the declared token before calling ``govern_token`` — a malformed
+  declaration (missing/non-string `kind`, an out-of-scale `risk`, ...) is
+  rejected, never governed. ``govern_token`` itself stays a pure mechanism
+  that accepts any declared mapping (a *well-formed but wrong* `kind`/`risk`
+  claim is what it's built to govern; ``tests/test_prom001.py`` calls it
+  directly with such claims — that is unaffected).
 
 The POLICY TABLE's content (which patterns map to which tier) is POLICY (SPEC
 §10) — supplied by the caller, a deployer choice, never hardcoded here. This
