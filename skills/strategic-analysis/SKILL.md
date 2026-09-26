@@ -2,6 +2,22 @@
 name: strategic-analysis
 description: Analyse a competitive/adversarial position - moves, threats, opportunities, plan - via the kernel's decision methods and possible-worlds. Solver analytic skill; fails closed without the kernel. Use when the user needs a competitive or adversarial position analysed into moves, threats, opportunities, and a plan. Triggers - "analyse this position", "what's my best move", "what are the threats", "think through the strategy".
 allowed-tools: solver_strategy
+governance:
+  grade: L1
+  actions:
+    - { kind: analyse_strategy, risk: low }
+    - { kind: release_strategic_plan, risk: medium, grade: L2 }
+  reserved:
+    - { kind: release_strategic_plan, by: workspace_owner }
+  prohibited:
+    - analyse_without_kernel
+  obligations:
+    - delegates_to_installed_engine
+    - decision_rules_shown
+  redress:
+    - { kind: release_strategic_plan, by: workspace_owner, overturn: true }
+  budget: { usd: 1, iters: 20 }
+  on-boundary: fail-closed-without-kernel
 ---
 
 # strategic-analysis

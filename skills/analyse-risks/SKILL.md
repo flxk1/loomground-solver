@@ -2,6 +2,22 @@
 name: analyse-risks
 description: Score and rank risks by impact x likelihood and prioritise mitigations, via the kernel's decision methods. Solver analytic skill; fails closed without the kernel. Use when the user has a set of risks to score, rank, or prioritise for mitigation. Triggers - "analyse the risks", "risk matrix", "score these risks", "what to mitigate first".
 allowed-tools: solver_analyse_risks
+governance:
+  grade: L1
+  actions:
+    - { kind: analyse_risks, risk: low }
+    - { kind: release_mitigation_priority, risk: medium, grade: L2 }
+  reserved:
+    - { kind: release_mitigation_priority, by: workspace_owner }
+  prohibited:
+    - analyse_without_kernel
+  obligations:
+    - delegates_to_installed_engine
+    - scoring_scheme_shown
+  redress:
+    - { kind: release_mitigation_priority, by: workspace_owner, overturn: true }
+  budget: { usd: 1, iters: 20 }
+  on-boundary: fail-closed-without-kernel
 ---
 
 # analyse-risks
