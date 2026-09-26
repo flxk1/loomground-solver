@@ -1315,6 +1315,11 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
 
         governed_activations = []
         for act in transport.get("activations", []):
+            if not isinstance(act, dict) or not isinstance(act.get("token"), dict):
+                # not our shape to govern - pass through unchanged so the main
+                # loop below rejects it as "invalid" (never abort the batch).
+                governed_activations.append(act)
+                continue
             observed = act.get("observed")
             if observed is None:
                 governed_activations.append(act)
