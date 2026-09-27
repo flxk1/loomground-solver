@@ -63,7 +63,7 @@ Contracts: [reasoning-interop](docs/contracts/reasoning-interop.md) · [loomgrou
 
 Shared reasoning kernel.
 
-- consumes: [loomground-governance](https://github.com/flxk1/loomground-governance) `>=0.8,<0.12` · [loomground-deontic](https://github.com/flxk1/loomground-deontic) `>=0.1,<0.3`
+- consumes: [loomground-governance](https://github.com/flxk1/loomground-governance) `v0.11.2` · [loomground-deontic](https://github.com/flxk1/loomground-deontic) `v0.2.1` (release tags)
 - consumed by: [loomground-versum](https://github.com/flxk1/loomground-versum) (corpus adapter, `reasoning.interop`) · loomground-norm · loomground-legal · the diagnostic operators (brief, collapse, escalation, falsifiability, mandate, proxy) · host applications through the public API
 - pipeline: `source → loomground-ingest → loomground-versum → loomground-solver → applied or diagnostic planes`
 
@@ -71,9 +71,13 @@ Kernel intent, adapter history and compatibility policy: [docs/design/overview.m
 
 ## Status
 
-- version 0.5.0 · `reasoning.interop` 1.0 · Loomground language 0.7 – 0.11.0 (`SUPPORTED_LANGUAGE_VERSIONS`)
-- 1084 tests passed, 21 skipped (`python -m pytest -q`)
+- version 0.6.0 · `reasoning.interop` 1.0 · Loomground language 0.7 – 0.11.2 (`SUPPORTED_LANGUAGE_VERSIONS`)
+- 1275 tests passed, 20 skipped (`python -m pytest -q`)
 - python >=3.10 · 7 skills (`skills/`) · 300 public symbols (`loomground_solver.__all__`)
+
+## How this is made
+
+The code and documentation are written with Loomground agents running on Claude (Anthropic). The maintainer reads and corrects all of it.
 
 ## License
 

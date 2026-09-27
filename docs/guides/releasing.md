@@ -16,7 +16,7 @@ version numbers are expected to differ and should not be read as a
 contradiction:
 
 - **The Python kernel** (`loomground-solver`, tracked in `pyproject.toml` and
-  `.release-please-manifest.json`, currently `0.1.0`). Release Please derives
+  `.release-please-manifest.json`, currently `0.6.0`). Release Please derives
   its version from conventional commits on `main`, as described in
   [Release PRs](#1-release-prs) below.
 - **The Claude plugin bundle** (tracked in `package.json` and

@@ -2,14 +2,14 @@
 
 The universal reasoning/decision kernel, extracted from host into a standalone package that **host and the KG (Versum) both import** without owning it. Governance and corpus arrive only through injected ports, so the same kernel runs as: the KG's L3 (may write derived truth), the standalone path-solver (writes nothing), and host's clamped verdict instance.
 
-The release gate currently contains **1084 tests**; the package imports in an empty environment with no governance/domain leak. The host-side integration (shims + adapters + their tests) lives in the host repo; every public host symbol is re-exported by the shims there.
+The release gate currently contains **1275 tests** (plus 20 skipped); the package imports in an empty environment with no governance/domain leak. The host-side integration (shims + adapters + their tests) lives in the host repo; every public host symbol is re-exported by the shims there.
 
 ## What's in the bundle
 
 ```
 loomground-solver/
   pyproject.toml
-  loomground_solver/           # the package (2.7k LOC, stdlib-only)
+  src/loomground_solver/       # the package
     dimensions.py              # 5D edge model + composition algebra (pure)
     reasoning.py               # path composition over the 5D graph — the epistemic solver
     norm_contract.py           # PASS/VIOLATION/ESCALATE floor (NT-* invariants)
@@ -33,7 +33,7 @@ loomground-solver/
 ```bash
 cd loomground-solver
 python3 -m pip install -e . --break-system-packages   # or into a venv
-python3 -m pytest -q                                   # expect: 1084 passed
+python3 -m pytest -q                                   # expect: 1275 passed
 python3 tools/run_loomground_conformance.py           # expect: 69/69 vectors passed
 python3 -m build                                        # build sdist + wheel
 ```

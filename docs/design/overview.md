@@ -9,9 +9,10 @@ the same kernel runs unchanged as the graph's derived-truth layer, as a standalo
 path-solver that writes nothing, and as host's clamped verdict instance.
 
 The runtime is standard-library-only apart from the data-only
-`loomground-governance` package, consumed from
-[`flxk1/loomground-governance`](https://github.com/flxk1/loomground-governance) as
-a pinned, published version (`>=0.8,<0.12`) — never an unpinned branch, so a
+`loomground-governance` package and `loomground-deontic`, consumed from
+[`flxk1/loomground-governance`](https://github.com/flxk1/loomground-governance) and
+[`flxk1/loomground-deontic`](https://github.com/flxk1/loomground-deontic) as
+pinned release tags (`v0.11.2`, `v0.2.1`) — never an unpinned branch, so a
 release can always be reinstalled identically.
 
 It can pair with any knowledge graph through the vendor-neutral
@@ -73,7 +74,7 @@ and wire it into host and Versum.
 
 ```bash
 python3 -m pip install -e . --break-system-packages   # or into a venv
-python3 -m pytest -q                                   # expect: 1084 passed
+python3 -m pytest -q                                   # expect: 1275 passed
 ```
 
 The two load-bearing gates:
@@ -119,5 +120,4 @@ The standalone service verifies evidence embedded under
 
 ## Authorship
 
-This work is authored by **Loomground Contributors** and was assisted by Claude and Codex. Claude
-and Codex are acknowledged as tools, not authors or co-authors.
+The code and documentation are written with Loomground agents running on Claude (Anthropic). The maintainer reads and corrects all of it.
