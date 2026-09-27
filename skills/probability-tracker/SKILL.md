@@ -41,6 +41,8 @@ echo '{"prior":{...},"likelihoods":{...},"evidence":"e"}' | python3 scripts/run.
 
 Delegates to the installed engine; holds no copied logic and exits non-zero if the engine is absent.
 
+The posterior is released as the standing estimate only by the workspace owner.
+
 ## When to use
 
 - "What are the chances now, given this evidence?"
