@@ -41,6 +41,8 @@ echo '{"prior":{...},"likelihoods":{...},"evidence":"e"}' | python3 scripts/run.
 
 Delegates to the installed engine; holds no copied logic and exits non-zero if the engine is absent.
 
+The estimate is an organisational estimate, not legal advice, and is released only by the workspace owner.
+
 ## More
 
 - `references/reference.md` - full inputs, semantics, and guardrails.

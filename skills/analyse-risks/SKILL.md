@@ -39,6 +39,8 @@ echo '{"vectors":{"riskA":[impact,likelihood]}}' | python3 scripts/run.py
 
 Delegates to the installed engine; holds no copied logic and exits non-zero if the engine is absent.
 
+The mitigation priority is released only by the workspace owner; until then it is a draft, not a decision.
+
 ## More
 
 - `references/reference.md` - full inputs, semantics, and guardrails.
