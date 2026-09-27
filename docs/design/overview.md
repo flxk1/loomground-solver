@@ -120,4 +120,4 @@ The standalone service verifies evidence embedded under
 
 ## Authorship
 
-The code and documentation are written with Loomground agents running on Claude (Anthropic). The maintainer reads and corrects all of it.
+The code and documentation are written with Loomground agents. The maintainer reads and corrects all of it.
