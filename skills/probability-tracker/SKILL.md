@@ -2,6 +2,24 @@
 name: probability-tracker
 description: Maintain and update a calibrated probability over an uncertain hypothesis as evidence arrives (Bayesian). Solver analytic skill wrapping the loomground_solver kernel; fails closed without it. Use when the user holds an uncertain hypothesis and wants its probability tracked and updated as evidence arrives. Triggers - "track the odds", "update the probability", "what's the likelihood now", "chances given this evidence".
 allowed-tools: solver_probability
+governance:
+  grade: L1
+  actions:
+    - { kind: track_probability, risk: low }
+    - { kind: release_probability_estimate, risk: medium, grade: L2 }
+  reserved:
+    - { kind: release_probability_estimate, by: workspace_owner }
+  prohibited:
+    - track_without_kernel
+    - invent_a_prior
+    - assert_unsupported_probability
+  obligations:
+    - delegates_to_installed_engine
+    - absent_prior_disclosed
+  redress:
+    - { kind: release_probability_estimate, by: workspace_owner, overturn: true }
+  budget: { usd: 1, iters: 20 }
+  on-boundary: fail-closed-without-kernel
 ---
 
 # probability-tracker
@@ -22,6 +40,8 @@ echo '{"prior":{...},"likelihoods":{...},"evidence":"e"}' | python3 scripts/run.
 ```
 
 Delegates to the installed engine; holds no copied logic and exits non-zero if the engine is absent.
+
+The posterior is released as the standing estimate only by the workspace owner.
 
 ## When to use
 

@@ -2,6 +2,30 @@
 name: advise-solver-addons
 description: Deterministically assess whether a Loomground Solver problem benefits from the optional world-model add-on or whether verified historical runs are ready for metacognitive analysis. Use when users ask whether to enable Solver add-ons, need an explainable add-on recommendation, want required or missing inputs identified, or need provider-neutral activation guidance. Do not use it to select a graph, retriever, model, storage provider, or authorization mechanism.
 allowed-tools: solver_advise_addons
+governance:
+  grade: L1
+  actions:
+    - { kind: advise_addons, risk: low }
+  prohibited:
+    - activate_addon
+    - load_provider
+    - write_proposal
+    - inspect_graph
+    - retrieve_evidence
+    - name_provider_in_recommendation
+    - convert_recommendation_to_authorization
+    - claim_unverified_as_verified
+    - choose_provider_on_activation
+    - advise_without_solver
+  obligations:
+    - providers_kept_opaque
+    - metadata_only_input
+    - activation_performed_disclosed
+    - host_authorizes_activation
+  redress:
+    - { kind: advise_addons, by: workspace_owner, overturn: true }
+  budget: { usd: 1, iters: 20 }
+  on-boundary: fail-closed-without-solver
 ---
 
 # Advise Solver add-ons
