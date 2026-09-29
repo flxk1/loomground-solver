@@ -73,7 +73,7 @@ def test_unknown_semantics_fail_closed():
         "cords": [{"from": "a", "to": "b", "type": "guessed"}],
         "reservations": [],
     }
-    with pytest.raises(ValueError, match="no Federation-5D mapping"):
+    with pytest.raises(ValueError, match="no 5D mapping"):
         adapt_loomground(observation)
 
 

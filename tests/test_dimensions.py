@@ -20,10 +20,10 @@ from loomground_solver.dimensions import (
 )
 
 
-# ── Federation parity ────────────────────────────────────────────
+# ── 5D parity ─────────────────────────────────────────────────────
 
 def test_exactly_five_dimensions_with_canonical_strings():
-    """String values must match the Federation cell graph for 1:1 mapping."""
+    """String values must match the 5D cell graph for 1:1 mapping."""
     assert {d.value for d in Dimension} == {
         "structural", "causal", "intentional", "temporal", "relational",
     }
@@ -61,7 +61,7 @@ def test_composition_results_are_dimensions():
         (Dimension.RELATIONAL, Dimension.RELATIONAL, Dimension.RELATIONAL),
     ],
 )
-def test_compose_matches_federation_table(a, b, expected):
+def test_compose_matches_5d_table(a, b, expected):
     assert compose(a, b) == expected
 
 

@@ -2,17 +2,44 @@
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, EnumMeta
 from typing import Any, Mapping, Protocol, runtime_checkable
 
+_FEDERATION_EXAMPLE_DEPRECATION = (
+    "ImprovementKind.FEDERATION_EXAMPLE (and the 'federation_example' value) "
+    "is deprecated and will be removed in a future release; use "
+    "ImprovementKind.CORPUS_EXAMPLE ('corpus_example') instead."
+)
 
-class ImprovementKind(str, Enum):
+
+class _ImprovementKindMeta(EnumMeta):
+    """Compatible with 3.10 and 3.12: EnumMeta's own ``__getattr__`` only
+    resolves live member names, so the retired ``FEDERATION_EXAMPLE`` alias is
+    hooked in here rather than as a class attribute (which would create a
+    second, divergent member)."""
+
+    def __getattr__(cls, name: str):
+        if name == "FEDERATION_EXAMPLE":
+            warnings.warn(_FEDERATION_EXAMPLE_DEPRECATION, DeprecationWarning, stacklevel=2)
+            return cls.CORPUS_EXAMPLE
+        return super().__getattr__(name)
+
+
+class ImprovementKind(str, Enum, metaclass=_ImprovementKindMeta):
     RULEPACK = "rulepack"
     FILTER = "filter"
     ADAPTER = "adapter"
     TEST = "test"
-    FEDERATION_EXAMPLE = "federation_example"
+    CORPUS_EXAMPLE = "corpus_example"
+
+    @classmethod
+    def _missing_(cls, value):
+        if value == "federation_example":
+            warnings.warn(_FEDERATION_EXAMPLE_DEPRECATION, DeprecationWarning, stacklevel=3)
+            return cls.CORPUS_EXAMPLE
+        return None
 
 
 class ProposalStatus(str, Enum):
