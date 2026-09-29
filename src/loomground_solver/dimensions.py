@@ -23,11 +23,11 @@ does not touch the mutation log, the audit chain, or storage. Edges are
 labelled with a dimension by the extractor that creates them (see
 ``classify_predicate``); retrieval and traversal consume the label.
 
-Federation adapter
-------------------
+5D adapter
+----------
 The enum string values here are identical to the cell concept-graph used in
-the Federation project, so a dimensioned Workspace edge maps one-to-one onto a
-Federation cell edge with no translation. If a Federation backend is wired
+the 5D cell algebra, so a dimensioned Workspace edge maps one-to-one onto a
+5D cell edge with no translation. If a 5D backend is wired
 in later, this module is the seam: keep the string values and the
 composition table in sync and the two graphs interoperate directly.
 """
@@ -58,7 +58,7 @@ DEFAULT_DIMENSION = Dimension.RELATIONAL
 # Read as: (edge1.dimension, edge2.dimension) -> composed dimension.
 # "If I know A through dimension X and B through dimension Y, which
 #  dimension governs the A->B inference?"
-# Ported verbatim from the Federation cell algebra so the two stay aligned.
+# Ported verbatim from the 5D cell algebra so the two stay aligned.
 
 _S = Dimension.STRUCTURAL
 _C = Dimension.CAUSAL

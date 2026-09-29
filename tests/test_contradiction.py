@@ -3,7 +3,7 @@
 """#2 — fingerprint the CONTRADICTION, not the surface. The contradiction filter
 abstracts a problem's edges to a domain-neutral invariant (opposing forces on a
 shared node), so a legal problem can be solved by the structural shape of a physics
-solution. Cross-domain transfer is proven at the federation layer: the invariant is
+solution. Cross-domain transfer is proven at the corpus layer: the invariant is
 derived; the domain-specific detail escalates."""
 from __future__ import annotations
 
@@ -46,8 +46,8 @@ def test_the_invariant_is_shared_across_domains_but_the_dimensions_are_not():
 
 # ── the on-vision proof: derive a LEGAL solution's structure from PHYSICS ─────
 
-def test_legal_solution_invariant_is_derived_from_a_physics_federation():
-    # a federation of PHYSICS problem->solution pairs: each resolves its trade-off
+def test_legal_solution_invariant_is_derived_from_a_physics_corpus():
+    # a corpus of PHYSICS problem->solution pairs: each resolves its trade-off
     physics_pairs = [
         (_prob([("structural", +1), ("causal", -1)], "beam"), _prob([("structural", +1)], "beam")),
         (_prob([("temporal", +1), ("causal", -1)], "signal"), _prob([("temporal", +1)], "signal")),
@@ -56,7 +56,7 @@ def test_legal_solution_invariant_is_derived_from_a_physics_federation():
     assert t["contradiction/contradiction_count"] == -1.0     # solutions resolve the contradiction
     assert t["contradiction/tradeoff"] == -1.0
 
-    # a LEGAL problem the federation has never seen (disclosure vs privacy)
+    # a LEGAL problem the corpus has never seen (disclosure vs privacy)
     legal_problem = _prob([("intentional", +1), ("relational", -1)], "personal-record")
     out = derive_solution(legal_problem, physics_pairs)
     # the invariant transfers: the derived legal solution RESOLVES its contradiction,

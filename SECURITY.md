@@ -16,7 +16,7 @@ the maintainer time to investigate before public disclosure.
 
 This repository ships a standard-library-only reasoning and decision kernel —
 a parser, validator and evaluator for the Loomground language, a fingerprint
-and federation model, and universal system-adapter boundaries — with no
+and corpus model, and universal system-adapter boundaries — with no
 network service of its own and no governance or corpus code (both arrive only
 through host-injected ports). A vulnerability report against this repository
 is most likely to concern the Loomground parser or evaluator, the adapter

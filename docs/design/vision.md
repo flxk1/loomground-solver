@@ -14,7 +14,7 @@ Nothing here is collapsed or paraphrased away. Companion to the
    over the 5D edges, not over surface text.
 2. **nD is reasoning.** The extra dimensions are not storage; they are structure
    you *reason over*. The open filter family and the open method family are that nD.
-3. The goal is a **large federation of problem-solution fingerprints that narrows
+3. The goal is a **large corpus of problem-solution fingerprints that narrows
    solutions to *unknown* problems by knowing the fingerprints** — inference over
    structure, never lookup.
 
@@ -35,7 +35,7 @@ Nothing here is collapsed or paraphrased away. Companion to the
    defeasibility + attack-closure). Categorically better than a reward model or an
    LLM judge, on exactly the axis the frontier lacks. In generate-and-verify, **the
    verifier is the moat**.
-9. The **federation is a compile-time knowledge layer, not a retrieval index** —
+9. The **corpus is a compile-time knowledge layer, not a retrieval index** —
    problem→solution structure compiled offline into a comparable, signed,
    reasoning-ready substrate (fingerprints, edges, contradictions, solver-DAGs,
    defeat relations).
@@ -43,7 +43,7 @@ Nothing here is collapsed or paraphrased away. Companion to the
     verified pass/fail is outcome data that steers the generator — but the labels
     are **explained and replayable**, not a scalar reward.
 11. The outcome: don't build a retrieval engine. Build the **solver as a verifier
-    service behind any generator**, and the **federation as a compile-time layer**
+    service behind any generator**, and the **corpus as a compile-time layer**
     that conditions the generator and supplies the defeaters the verifier needs.
     Generate with the frontier, verify with the thing only you have, compile ahead
     of time, learn from outcomes.
@@ -184,10 +184,10 @@ dependency-inversion gate (universality) still green with every addition below.
 
 Built this row (supervised loops, each verified, then adversarially reviewed):
 
-- **Federation over negative space (18c).** `federation.py` now reasons over the
+- **Corpus over negative space (18c).** `corpus.py` now reasons over the
   set-valued negative-space coordinates as well as the numeric ones: the *count* of
   defeaters/gaps a solution closes is structural and transfers; the *identity* of a
-  specific gap escalates unless the federation systematically agrees. Guarded
+  specific gap escalates unless the corpus systematically agrees. Guarded
   against incomparable fingerprint **shapes** (a facet on one side, absent on the
   other, is no longer silently read as zero — it raises, A2).
 - **#2 — the `contradiction` filter (13).** Abstracts a problem's edges to a
@@ -195,9 +195,9 @@ Built this row (supervised loops, each verified, then adversarially reviewed):
   coordinates (`contradiction_count`, `tradeoff`) are dimension-agnostic and
   transfer across domains; the `tradeoff_axes` / `dimension_tension` are
   domain-bound and escalate. Proven: a **legal** problem's solution invariant is
-  derived from a federation of **physics** pairs (cross-domain, by inference).
+  derived from a corpus of **physics** pairs (cross-domain, by inference).
 - **The product surface `narrow()` (Loop 3).** Takes an unknown problem's
-  fingerprint + a federation, derives the solution structure, and routes the
+  fingerprint + a corpus, derives the solution structure, and routes the
   undetermined coordinates to a bounded escalation set (decision-space discipline).
   `complete` requires the whole structure pinned (determinacy 1.0), never merely
   "nothing escalated."

@@ -132,7 +132,11 @@ def test_edge_reachability_consumes_compose_paths():
 # ── D. no orphans: every top-level module wired AND tested ─────────────────────
 
 # Excluded from the module census (not capability modules).
-_SKIP = {"__init__.py", "__main__.py", "_version.py"}
+# `federation.py` is a deprecated shim (see tests/test_deprecations.py): it is
+# deliberately left un-re-exported from __init__ and un-consumed by other src
+# modules — importing the old path is meant to keep working standalone, not
+# proliferate internally — so it is exempt from the wiring half of this gate.
+_SKIP = {"__init__.py", "__main__.py", "_version.py", "federation.py"}
 
 # Façade modules covered INDIRECTLY (no dedicated test_<name>.py and only
 # re-exported, never consumed by another src module — so the transitive-coverage

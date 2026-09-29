@@ -271,7 +271,7 @@ def _adapter_context(ctx: dict) -> Optional[dict]:
 
 def _off_grid(ctx: dict) -> dict:
     """The FLOOR made a first-class facet: relations PRESENT in the graph but placed on
-    NO declared Federation dimension. Every other lens (``logical_form``, ``statistics``,
+    NO declared 5D dimension. Every other lens (``logical_form``, ``statistics``,
     ``argument_types``) counts only edges whose ``dimension`` is one of the five and
     silently drops the rest; this lens fingerprints exactly what they drop. An edge is
     off-grid when its ``dimension`` is missing or is not a declared dimension — the
@@ -411,5 +411,5 @@ def canonical_bytes(fp: dict) -> bytes:
 
 
 def signature(fp: dict) -> str:
-    """Content address of a fingerprint (federation identity + dedup)."""
+    """Content address of a fingerprint (corpus identity + dedup)."""
     return "sha256:" + hashlib.sha256(canonical_bytes(fp)).hexdigest()

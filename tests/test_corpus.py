@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 flxk1
 """Reasoning in fingerprint space: derive an unknown problem's solution structure
-by INFERENCE over the federation's problem→solution transform — not by lookup."""
+by INFERENCE over the corpus's problem→solution transform — not by lookup."""
 from __future__ import annotations
 
 import pytest
@@ -17,7 +17,7 @@ def _fp(n_causal, n_temporal=0):
     return fingerprint(pairs=[{"id": "x", "edges": edges}], filters=["logical_form"])
 
 
-def test_transform_learned_where_the_federation_agrees():
+def test_transform_learned_where_the_corpus_agrees():
     # every pair's solution adds exactly one causal edge over its problem
     pairs = [(_fp(1), _fp(2)), (_fp(3), _fp(4)), (_fp(0), _fp(1))]
     t = structural_transform(pairs)
@@ -42,7 +42,7 @@ def test_disagreement_is_undetermined_and_escalates_not_guessed():
     assert out["determinacy"] < 1.0                          # honestly not fully pinned
 
 
-def test_empty_federation_determines_nothing():
+def test_empty_corpus_determines_nothing():
     out = derive_solution(_fp(2), [])
     assert out["determined"] == {} and out["determinacy"] == 0.0
 
@@ -87,8 +87,8 @@ def test_negative_space_count_transfers_but_identity_escalates():
     assert out["determinacy"] < 1.0                           # honestly not fully pinned
 
 
-def test_systematic_defeater_is_derived_when_the_federation_agrees():
-    # the SAME gap G0 is closed in every pair -> the federation pins its identity
+def test_systematic_defeater_is_derived_when_the_corpus_agrees():
+    # the SAME gap G0 is closed in every pair -> the corpus pins its identity
     pairs = [(_ns(["G0", "x"]), _ns(["x"])),
              (_ns(["G0", "y"]), _ns(["y"]))]
     t = structural_transform(pairs)
