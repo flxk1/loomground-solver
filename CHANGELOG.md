@@ -2,6 +2,13 @@
 <!-- Copyright 2026 flxk1 -->
 # Changelog
 
+## 0.6.2 (2026-09-29)
+
+### Changed
+
+* **naming:** the identifiers and prose that carried the retired project name use
+  neutral 5D names; the old names remain as deprecated aliases for one release.
+
 ## [0.6.1](https://github.com/flxk1/loomground-solver/compare/solver-v0.6.0...solver-v0.6.1) (2026-09-27)
 
 
