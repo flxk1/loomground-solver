@@ -139,7 +139,7 @@ class LoomgroundAdapter:
     def _edge(source: str, predicate: str, target: str,
               attributes: dict | None = None) -> dict:
         if predicate not in RELATIONS:
-            raise ValueError(f"no Federation-5D mapping for {predicate!r}")
+            raise ValueError(f"no 5D mapping for {predicate!r}")
         if not source or not target:
             raise ValueError("Loomground relation requires source and target")
         dimension, semantic_role = RELATIONS[predicate]

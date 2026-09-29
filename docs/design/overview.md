@@ -26,7 +26,7 @@ in the [release and versioning guide](../guides/releasing.md).
 
 Solver exposes a packaged universal-adapter boundary. Loomground is
 the built-in reference adapter: it projects canonical observations into ordinary
-Federation-5D reasoning pairs and typed, versioned nD coordinates without coupling
+5D reasoning pairs and typed, versioned nD coordinates without coupling
 Solver to Versum. Additional systems can implement `SystemAdapter` and register through
 `AdapterRegistry`. The same package contains the Versum corpus adapter and opt-in
 fingerprint adapters under `loomground_solver.adapters`; there is no separate
@@ -51,9 +51,9 @@ The kernel is a **verifier + structured world model**, not a retriever. A genera
   (`logical_form`), the attack topology, the negative space (unfired defeaters /
   untriggered exceptions / gaps), argument types, statistics, and the
   cross-domain `contradiction` invariant — register your own in one line.
-- **Federation** — reasoning in fingerprint space: narrow an unknown problem's
+- **Corpus** — reasoning in fingerprint space: narrow an unknown problem's
   solution by inference over a body of problem→solution fingerprint pairs, and
-  escalate (never guess) the coordinates the federation does not pin down.
+  escalate (never guess) the coordinates the corpus does not pin down.
 - An open registry of 19 reasoning methods across logic, philosophy, methodology,
   rationalist decision theory, mathematics, and data science (`register_method`
   for more), plus the `loomground` governance-language route registered the same
@@ -90,8 +90,8 @@ The two load-bearing gates:
 ```python
 from loomground_solver import entail, check, narrow, fingerprint, decision_space
 
-# narrow an unknown problem by inference over a federation of fingerprint pairs
-out = narrow(problem_fp, federation)   # {solution, escalate, determinacy, complete}
+# narrow an unknown problem by inference over a corpus of fingerprint pairs
+out = narrow(problem_fp, corpus)       # {solution, escalate, determinacy, complete}
 ```
 
 Host-side glue (a `NormSource` over a corpus, a `Governance` over a policy engine)

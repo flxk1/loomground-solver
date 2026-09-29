@@ -60,7 +60,7 @@ def _gini(values):
 
 
 def statistics_methods(context: dict) -> dict:
-    """Describe edge weights and their Federation-5D distribution."""
+    """Describe edge weights and their 5D distribution."""
     weights = [
         float(_get(edge, "weight", 1.0))
         for pair in context.get("pairs") or ()

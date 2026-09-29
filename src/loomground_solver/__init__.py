@@ -260,8 +260,8 @@ from .interpret import interpret, audit, audit_text
 # datapump — the verifier data-pump: verified runs -> training data (rung 4)
 from .datapump import harvest, to_jsonl
 
-# federation — reasoning in fingerprint space (narrow a solution by inference)
-from .federation import structural_transform, derive_solution
+# corpus — reasoning in fingerprint space (narrow a solution by inference)
+from .corpus import structural_transform, derive_solution
 
 # api — the product surface
 from .api import entail, plan, check, narrow
@@ -406,7 +406,7 @@ __all__ = [
     "interpret", "audit", "audit_text",
     # datapump (rung 4)
     "harvest", "to_jsonl",
-    # federation — reasoning in fingerprint space
+    # corpus — reasoning in fingerprint space
     "structural_transform", "derive_solution",
     # api
     "entail", "plan", "check", "narrow",

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 flxk1
 """The product surface for the vision: narrow an unknown problem's solution by
-inference over a federation (reasoning in fingerprint space), with undetermined
+inference over a corpus (reasoning in fingerprint space), with undetermined
 structure routed to a bounded escalation set — never guessed."""
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def test_narrow_derives_the_accepted_structure_and_escalates_the_rest():
     assert 0.0 < out["determinacy"] < 1.0
 
 
-def test_narrow_is_complete_when_the_federation_pins_everything():
+def test_narrow_is_complete_when_the_corpus_pins_everything():
     pairs = [(_prob([("structural", +1), ("causal", -1)], "beam"), _prob([("structural", +1)], "beam"))]
     out = narrow(_prob([("structural", +1), ("causal", -1)], "beam"), pairs)
     assert out["complete"] is True
@@ -36,7 +36,7 @@ def test_narrow_is_complete_when_the_federation_pins_everything():
     assert out["determinacy"] == 1.0
 
 
-def test_narrow_pins_nothing_from_an_empty_federation():
+def test_narrow_pins_nothing_from_an_empty_corpus():
     out = narrow(_prob([("structural", +1)], "beam"), [])
     assert out["solution"] == {} and out["escalate"] == []
     # nothing pinned -> NOT complete, even though nothing escalated either

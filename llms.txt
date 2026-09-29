@@ -16,7 +16,7 @@ python -m pytest -q
 ```python
 from loomground_solver import entail, check, narrow, fingerprint, decision_space, default_service
 
-out = narrow(problem_fp, federation)          # {solution, escalate, determinacy, complete}
+out = narrow(problem_fp, corpus)              # {solution, escalate, determinacy, complete}
 result = default_service().verify(request)    # reasoning.interop 1.0 request dict
 ```
 

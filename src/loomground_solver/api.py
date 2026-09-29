@@ -15,13 +15,16 @@ Signatures are deliberately permissive; the verbatim internals
 
 from __future__ import annotations
 
+import warnings
 from typing import Any, Optional
 
 from . import contract as _contract
 from . import reasoning as _reasoning
 from . import topology as _topology
-from .federation import derive_solution as _derive_solution
+from .corpus import derive_solution as _derive_solution
 from .ports import Governance, NullGovernance
+
+_NARROW_UNSET = object()
 
 
 def entail(pairs, subject: Optional[str] = None, *, max_hops: int = 4):
@@ -43,15 +46,16 @@ def plan(nodes, deps, *, roots=None) -> dict[str, Any]:
     return _topology.build_topology(nodes, deps, roots=roots)
 
 
-def narrow(problem_fp: dict, federation, *, tol: float = 1e-9) -> dict:
-    """Narrow the solution of an UNKNOWN problem by inference over a ``federation``
+def narrow(problem_fp: dict, corpus=_NARROW_UNSET, *, tol: float = 1e-9,
+           federation=_NARROW_UNSET) -> dict:
+    """Narrow the solution of an UNKNOWN problem by inference over a ``corpus``
     of problem→solution fingerprint pairs — reasoning in fingerprint space, not
-    retrieval. The answer's structure is composed from the whole federation's
+    retrieval. The answer's structure is composed from the whole corpus's
     regularity; nothing is fetched from a neighbour.
 
     Returns the decision-space carried into fingerprint space:
 
-      * ``solution``    — the derived structure the federation pins down (the
+      * ``solution``    — the derived structure the corpus pins down (the
                           accepted, auto-derivable coordinates: numeric + set-valued
                           negative space);
       * ``escalate``    — the coordinates it does NOT pin down; the bounded set a
@@ -59,12 +63,29 @@ def narrow(problem_fp: dict, federation, *, tol: float = 1e-9) -> dict:
                           resolve, and cannot step outside. Undetermined structure
                           escalates — it is never guessed;
       * ``determinacy`` — the share of coordinates pinned down;
-      * ``complete``    — whether the federation pinned the whole structure.
+      * ``complete``    — whether the corpus pinned the whole structure.
 
-    Thin wrapper over :func:`federation.derive_solution`."""
-    d = _derive_solution(problem_fp, federation, tol=tol)
+    Thin wrapper over :func:`corpus.derive_solution`.
+
+    ``federation`` is a deprecated keyword alias for ``corpus``, kept for one
+    release. Passing it emits a :class:`DeprecationWarning`; passing both
+    ``corpus`` and ``federation`` raises :class:`TypeError`."""
+    if corpus is not _NARROW_UNSET and federation is not _NARROW_UNSET:
+        raise TypeError("narrow() got both 'corpus' and the deprecated "
+                         "'federation' keyword; pass only 'corpus'")
+    if federation is not _NARROW_UNSET:
+        warnings.warn(
+            "narrow(..., federation=...) is deprecated; use "
+            "narrow(..., corpus=...) instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        corpus = federation
+    if corpus is _NARROW_UNSET:
+        raise TypeError("narrow() missing required argument: 'corpus'")
+    d = _derive_solution(problem_fp, corpus, tol=tol)
     # `complete` requires the WHOLE structure pinned (determinacy 1.0), not merely
-    # "nothing escalated" — an empty/zero-knowledge federation escalates nothing yet
+    # "nothing escalated" — an empty/zero-knowledge corpus escalates nothing yet
     # pins nothing, and must NOT read as complete.
     return {"solution": {**d["determined"], **d["determined_sets"]},
             "escalate": d["undetermined"],
