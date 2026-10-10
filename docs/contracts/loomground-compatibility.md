@@ -22,7 +22,7 @@ table.
 
 The normative grammar, schemas, vocabulary and vectors remain owned by the
 Loomground specification repository and arrive through its data-only
-`loomground-governance` package. Solver ships an independent implementation, not
+`loomground-governance` package. Solver ships its own implementation, not
 an artifact snapshot. Its release gate uses the package's neutral protocol and
 conformance runner through `tools/run_loomground_conformance.py`.
 

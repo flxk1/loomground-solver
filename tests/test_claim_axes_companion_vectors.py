@@ -3,8 +3,10 @@
 The canonical vectors live in the language repo
 (``standard/companions/claim-axes/vectors``); ``tests/fixtures/claim_axes_vectors``
 is the versioned copy this repo vendors per ADR 002. The Solver's
-``ClaimAxesDecoder`` is one of the companion's two independent implementations:
-it must accept every valid record and reject every invalid one.
+``ClaimAxesDecoder`` is one of the companion's two implementations (their
+independence from each other is open, the same as specification §9 --
+see loomground-governance COMPANION.md §4): it must accept every valid
+record and reject every invalid one.
 """
 import json
 from pathlib import Path
