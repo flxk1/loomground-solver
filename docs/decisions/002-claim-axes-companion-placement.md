@@ -29,6 +29,7 @@ The companion profiles live in the language repo:
 - Tools vendor the vectors as versioned copies (this repo:
   `tests/fixtures/claim_axes_vectors/`) and prove conformance differentially —
   the Solver decoder and the Versum producer are the companion's two
-  independent implementations.
+  implementations; their independence from each other is open, the same as
+  specification §9 (both were authored within this project).
 - New axis semantics arrive as new companion profile versions with their own
   closed sets, never by widening 0.1.0's.
