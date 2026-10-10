@@ -129,14 +129,30 @@ _ID_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]*$")
 
 
 class ParseError(ValueError):
-    """Raised at parse stage (grammar error): missing arrow, unknown keyword."""
+    """Raised at parse stage (grammar error): missing arrow, unknown keyword.
+
+    Carries a ``reason`` attribute from the closed reject-reason vocabulary
+    (vocabulary/reject-reasons.json) — ``PARSE_ERROR`` by default, or a more
+    specific code (``RACK_UNKNOWN``, ``RACK_ARITY``) for the §7 rack pre-pass.
+    The parse-stage rule holds: this exception is raised ONLY for a genuine
+    grammar/pre-pass failure, never for an apply-stage (well-formedness)
+    rejection — those are reported by validate() instead."""
+
+    def __init__(self, message: str, reason: str = "PARSE_ERROR") -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 class ApplyError(ValueError):
-    """Raised when a parsed policy graph is not well formed."""
+    """Raised when a parsed policy graph is not well formed.
 
-    def __init__(self, errors):
+    Carries a ``reason`` attribute — the first closed-vocabulary code
+    (vocabulary/reject-reasons.json) among the violations validate() found,
+    or None when every violation found is outside that closed set."""
+
+    def __init__(self, errors, reason: Optional[str] = None):
         self.errors = tuple(errors)
+        self.reason = reason
         super().__init__("; ".join(self.errors))
 
 
@@ -178,7 +194,7 @@ def expand_racks(text: str) -> str:
         if m:
             name = m.group(1)
             if name not in defs:
-                raise ParseError(f"rack-use: unknown rack {name!r}")
+                raise ParseError(f"rack-use: unknown rack {name!r}", reason="RACK_UNKNOWN")
             params, body = defs[name]
             bindings: dict[str, str] = {}
             for b in (x.strip() for x in m.group(2).split(",") if x.strip()):
@@ -188,7 +204,8 @@ def expand_racks(text: str) -> str:
                 bindings[k.strip()] = v.strip()
             if set(bindings) != set(params):
                 raise ParseError(
-                    f"rack-use {name}: args {sorted(bindings)} != params {sorted(params)}"
+                    f"rack-use {name}: args {sorted(bindings)} != params {sorted(params)}",
+                    reason="RACK_ARITY",
                 )
             idx = str(use_counter)
             use_counter += 1
@@ -480,8 +497,19 @@ def _parse_redress(tok: list[str], n: int) -> dict[str, Any]:
 
 # ── §4 well-formedness (apply stage) ───────────────────────────────────────────
 def validate(patch: dict[str, Any]) -> dict[str, Any]:
-    """Return {ok, errors}. Apply-stage legality of the abstract policy graph."""
+    """Return {ok, errors, reason}. Apply-stage legality of the abstract policy
+    graph. `reason` is the first closed-vocabulary code (vocabulary/
+    reject-reasons.json) among the violations found, in the order checked
+    below, or None when every violation found lies outside that closed set
+    (and when ok is True)."""
     errors: list[str] = []
+    _reason: list[Optional[str]] = [None]
+
+    def _fail(msg: str, code: Optional[str] = None) -> None:
+        errors.append(msg)
+        if code and _reason[0] is None:
+            _reason[0] = code
+
     # node ids share one namespace (id grammar §3): a duplicate id is ill-formed
     _ids = [nd.get("id") for nd in patch.get("nodes", [])]
     _dupes = sorted({i for i in _ids if _ids.count(i) > 1})
@@ -496,7 +524,8 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
     for nd in patch.get("nodes", []):
         if nd["class"] == "gate" and "risk_floor" in nd:
             if nd["risk_floor"] not in RISK_RANK:
-                errors.append(f"gate {nd['id']!r}: risk {nd['risk_floor']!r} not in {RISKS}")
+                _fail(f"gate {nd['id']!r}: risk {nd['risk_floor']!r} not in {RISKS}",
+                      "RISK_OUT_OF_DOMAIN")
 
     # §6 guard-field domain / no-id wall. The parser accepts any 3-token `when`
     # tail (grammar); legality is decided HERE (apply stage) — a guard over `id` or
@@ -521,15 +550,19 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
                 continue
             _field, _op, _val = _parts
             if _field not in GUARD_FIELDS:
-                errors.append(
+                _fail(
                     f"{_decl_kind} {_d.get('kind')!r}: guard over {_field!r} forbidden — "
-                    f"a guard ranges only over {sorted(GUARD_FIELDS)} (no-id wall)")
+                    f"a guard ranges only over {sorted(GUARD_FIELDS)} (no-id wall)",
+                    "GUARD_DOMAIN_VIOLATION")
             elif _op not in GUARD_OPS[_field]:
-                errors.append(f"{_decl_kind} {_d.get('kind')!r}: operator {_op!r} not defined for guard field {_field!r}")
+                _fail(f"{_decl_kind} {_d.get('kind')!r}: operator {_op!r} not defined for guard field {_field!r}",
+                      "GUARD_PAIRING_INVALID")
             elif _field in _ORDERED_RANKS and _val not in _ORDERED_RANKS[_field]:
-                errors.append(
+                _fail(
                     f"{_decl_kind} {_d.get('kind')!r}: {_field} {_val!r} not in "
-                    f"{list(_ORDERED_RANKS[_field])}")
+                    f"{list(_ORDERED_RANKS[_field])}",
+                    {"risk": "RISK_OUT_OF_DOMAIN",
+                       "reversibility": "REVERSIBILITY_OUT_OF_DOMAIN"}.get(_field))
 
     cords = patch.get("cords", [])
     pipe_edges: list[tuple[str, str]] = []
@@ -538,29 +571,31 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         src, dst = c.get("from"), c.get("to")
         # endpoints must be declared (master is implicit)
         if dst != MASTER and dst not in by_id:
-            errors.append(f"cord -> {dst!r}: target is not a declared node")
+            _fail(f"cord -> {dst!r}: target is not a declared node", "UNDECLARED_NODE")
             continue
         if src != MASTER and src not in by_id:
-            errors.append(f"cord {src!r} ->: source is not a declared node")
+            _fail(f"cord {src!r} ->: source is not a declared node", "UNDECLARED_NODE")
             continue
         # classify by endpoint classes (the only legal pairings)
         if dst == MASTER:
             if src in gates:
                 c["type"] = "egress"; egress_gates.add(src)
             elif src in actors:
-                errors.append(f"cord {src!r} -> master: an actor must pass through a gate")
+                _fail(f"cord {src!r} -> master: an actor must pass through a gate",
+                      "NON_CONFORMING_CORD")
             else:
-                errors.append(f"cord {src!r} -> master: only a gate egresses to master")
+                _fail(f"cord {src!r} -> master: only a gate egresses to master",
+                      "NON_CONFORMING_CORD")
         elif src in actors and dst in gates:
             c["type"] = "authority"
         elif src in gates and dst in gates:
             c["type"] = "pipe"; pipe_edges.append((src, dst))
         elif src in humans:
-            errors.append(f"cord {src!r}: a human is never a cord endpoint")
+            _fail(f"cord {src!r}: a human is never a cord endpoint", "NON_CONFORMING_CORD")
         elif dst in humans:
-            errors.append(f"cord -> {dst!r}: a human is never a cord endpoint")
+            _fail(f"cord -> {dst!r}: a human is never a cord endpoint", "NON_CONFORMING_CORD")
         else:
-            errors.append(f"cord {src!r} -> {dst!r}: ill-formed endpoint pairing")
+            _fail(f"cord {src!r} -> {dst!r}: ill-formed endpoint pairing", "NON_CONFORMING_CORD")
 
     # exactly one master is implicit; egress cords must exist for a usable graph,
     # but the binding rule we enforce: every gate lies on a pipe∪egress path to master.
@@ -581,7 +616,7 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
 
     # pipe relation must be acyclic
     if _has_cycle(pipe_edges):
-        errors.append("pipe relation has a cycle (must be acyclic)")
+        _fail("pipe relation has a cycle (must be acyclic)", "PIPE_CYCLE")
 
     # authority: the gate must grant that actor (grant clause or authority cord both count)
     # (authority cords are themselves the grant; nothing further to check here)
@@ -596,9 +631,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         if nd["class"] == "gate" and nd.get("consignee"):
             _consignees.add(nd["consignee"])
             if nd["id"] not in egress_gates:
-                errors.append(
+                _fail(
                     f"gate {nd['id']!r}: consignee {nd['consignee']!r} on a "
-                    f"non-terminal gate is ill-formed (§6)")
+                    f"non-terminal gate is ill-formed (§6)",
+                    "CONSIGNEE_NOT_TERMINAL")
 
     # §6/§7.1 autonomy grade (v0.6) — apply stage. A grade must be a level on the active
     # ladder; a REQUIRED grade may sit only on a SOURCE gate (no incoming pipe): the
@@ -608,10 +644,12 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
     _by_id = {nd["id"]: nd for nd in patch.get("nodes", [])}
     for nd in patch.get("nodes", []):
         if nd["class"] == "actor" and nd.get("grade") is not None and nd["grade"] not in GRADE_RANK:
-            errors.append(f"actor {nd['id']!r}: grade {nd['grade']!r} not on the ladder {GRADES}")
+            _fail(f"actor {nd['id']!r}: grade {nd['grade']!r} not on the ladder {GRADES}",
+                  "GRADE_OUT_OF_DOMAIN")
         if nd["class"] == "gate" and nd.get("grade_required") is not None:
             if nd["grade_required"] not in GRADE_RANK:
-                errors.append(f"gate {nd['id']!r}: required grade {nd['grade_required']!r} not on the ladder {GRADES}")
+                _fail(f"gate {nd['id']!r}: required grade {nd['grade_required']!r} not on the ladder {GRADES}",
+                      "GRADE_OUT_OF_DOMAIN")
             if nd["id"] in _piped_to:
                 errors.append(f"gate {nd['id']!r}: a required grade on a non-source (piped) gate is ill-formed (§6)")
         # delegation may not amplify: a delegate's granted grade may not exceed the
@@ -623,9 +661,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
             boss = _by_id.get(nd["on_behalf_of"])
             if boss is not None and boss.get("class") == "actor" and nd.get("grade") is not None and \
                     GRADE_RANK.get(nd["grade"], -1) > GRADE_RANK.get(boss.get("grade"), -1):
-                errors.append(
+                _fail(
                     f"actor {nd['id']!r}: granted grade {nd['grade']!r} amplifies its "
-                    f"delegator {boss['id']!r} (grade {boss.get('grade')!r}) — ill-formed")
+                    f"delegator {boss['id']!r} (grade {boss.get('grade')!r}) — ill-formed",
+                    "GRADE_AMPLIFICATION")
 
     # §5.1/§6 the principal chain: the on-behalf-of relation must name a declared
     # actor or human, declare at most one delegator per actor, and be acyclic —
@@ -637,21 +676,24 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         if nd["class"] != "actor":
             continue
         if nd.get("on_behalf_of_extra"):
-            errors.append(
+            _fail(
                 f"actor {nd['id']!r}: declares more than one delegator — "
-                f"at most one on-behalf-of per actor")
+                f"at most one on-behalf-of per actor",
+                "OBO_DUPLICATE_DELEGATOR")
         boss_id = nd.get("on_behalf_of")
         if not boss_id:
             continue
         boss = by_id.get(boss_id)
         if boss is None or boss["class"] not in ("actor", "human"):
-            errors.append(
+            _fail(
                 f"actor {nd['id']!r}: on-behalf-of {boss_id!r} does not name a "
-                f"declared actor or human")
+                f"declared actor or human",
+                "UNDECLARED_NODE")
         elif boss["class"] == "actor":
             _obo_edges.append((nd["id"], boss_id))
     if _has_cycle(_obo_edges):
-        errors.append("on-behalf-of relation has a cycle (the principal chain must be acyclic)")
+        _fail("on-behalf-of relation has a cycle (the principal chain must be acyclic)",
+              "OBO_CYCLE")
 
     # v0.9.0 mandate-attenuation invariant (§6): an actor declares at most one
     # mandate, and a delegate's mandate MUST be a subset of its actor-delegator's.
@@ -663,9 +705,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         if nd["class"] != "actor":
             continue
         if nd.get("mandate_extra"):
-            errors.append(
+            _fail(
                 f"actor {nd['id']!r}: declares more than one mandate — "
-                f"at most one per actor")
+                f"at most one per actor",
+                "MANDATE_DUPLICATE")
         boss_id = nd.get("on_behalf_of")
         if not boss_id:
             continue
@@ -675,9 +718,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
         delegate_mandate = set(nd.get("mandate") or [])
         boss_mandate = set(boss.get("mandate") or [])
         if not delegate_mandate <= boss_mandate:
-            errors.append(
+            _fail(
                 f"actor {nd['id']!r}: mandate {sorted(delegate_mandate)} widens beyond "
-                f"delegator {boss_id!r} ({sorted(boss_mandate)}) — ill-formed")
+                f"delegator {boss_id!r} ({sorted(boss_mandate)}) — ill-formed",
+                "MANDATE_WIDENING")
 
     # delegation MUST NOT amplify granted authority over a kind's risk set (§6): at every
     # gate where the delegate is granted a kind, the delegate's granted risk set over that
@@ -716,18 +760,20 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
                 # delegator's own bare grant at the same gate covers it
                 if not any(bg.get("actor") == boss_id and bg.get("gate") == gate_id
                            and not bg.get("kinds") for bg in patch.get("grants", [])):
-                    errors.append(
+                    _fail(
                         f"actor {sub_id!r}: bare grant at gate {gate_id!r} amplifies "
-                        f"delegator {boss_id!r} (no covering bare grant) — ill-formed")
+                        f"delegator {boss_id!r} (no covering bare grant) — ill-formed",
+                        "RISK_AMPLIFICATION")
                 continue
             risks = g.get("risks") or []
             ds = set(risks) if risks else set(_all_risks)
             for k in kinds:
                 bs = _risk_set_over(boss_id, gate_id, k)
                 if not ds <= bs:
-                    errors.append(
+                    _fail(
                         f"actor {sub_id!r}: granted risk set {sorted(ds)} over {k!r} at gate "
-                        f"{gate_id!r} amplifies delegator {boss_id!r} ({sorted(bs)}) — ill-formed")
+                        f"{gate_id!r} amplifies delegator {boss_id!r} ({sorted(bs)}) — ill-formed",
+                        "RISK_AMPLIFICATION")
 
     # Apply-stage well-formedness of grants + reservation clauses. These parse fine but
     # reference an undeclared actor or a malformed clause: reject them here, fail-closed,
@@ -745,9 +791,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
     # (the `reject-obligation-undeclared-gate` conformance vector caught this).
     for o in patch.get("obligations", []):
         if o.get("on") not in gates:
-            errors.append(
+            _fail(
                 f"obligation {o.get('obligation')!r} on {o.get('on')!r}: "
-                f"the named gate is not a declared gate")
+                f"the named gate is not a declared gate",
+                "UNDECLARED_NODE")
     _DUR_RE = re.compile(r"^\d+[mhd]$")
     for r in patch.get("reservations", []):
         by = (r.get("by") or "").strip()
@@ -790,9 +837,10 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
 
     for t in patch.get("transfers", []):
         if t.get("to") not in _consignees:
-            errors.append(
+            _fail(
                 f"transfer {t.get('kind')!r} to {t.get('to')!r}: no gate declares "
-                f"this consignee — ill-formed")
+                f"this consignee — ill-formed",
+                "TRANSFER_DANGLING_CONSIGNEE")
             continue
         purposes = set(t.get("within") or [])
         if not purposes:
@@ -804,12 +852,13 @@ def validate(patch: dict[str, Any]) -> dict[str, Any]:
             for actor_id in _actors_granted_over_kind_at(gate_id, t["kind"]):
                 actor_mandate = set((by_id.get(actor_id) or {}).get("mandate") or [])
                 if not purposes <= actor_mandate:
-                    errors.append(
+                    _fail(
                         f"transfer {t['kind']!r} to {t['to']!r}: purposes {sorted(purposes)} "
                         f"exceed the mandate of actor {actor_id!r} ({sorted(actor_mandate)}) "
-                        f"granted at gate {gate_id!r} — ill-formed")
+                        f"granted at gate {gate_id!r} — ill-formed",
+                        "TRANSFER_WIDENING")
 
-    return {"ok": not errors, "errors": errors}
+    return {"ok": not errors, "errors": errors, "reason": _reason[0]}
 
 
 def _has_cycle(edges: list[tuple[str, str]]) -> bool:
@@ -1070,11 +1119,18 @@ def _authorized(patch: dict[str, Any], gate_id: str, actor: Optional[str],
     return False
 
 
-def _gate_own_verdict(patch: dict[str, Any], gate_id: str, token: dict[str, Any],
-                      actor: Optional[str] = None) -> str:
+def _effective_risk(patch: dict[str, Any], gate_id: str, token: dict[str, Any]) -> str:
+    """SPEC §4: a gate's declared risk floor raises a token's risk, never lowers
+    it — the effective, gate-computed risk a guard at THIS gate tests against.
+    Local to the gate (never inherited across a pipe, unlike the joined verdict)."""
     gate = next((nd for nd in patch["nodes"] if nd["id"] == gate_id), {})
     floor = gate.get("risk_floor", "low")
-    eff_risk = RISKS[max(RISK_RANK.get(token.get("risk"), len(RISKS) - 1), RISK_RANK.get(floor, 0))]
+    return RISKS[max(RISK_RANK.get(token.get("risk"), len(RISKS) - 1), RISK_RANK.get(floor, 0))]
+
+
+def _gate_own_verdict(patch: dict[str, Any], gate_id: str, token: dict[str, Any],
+                      actor: Optional[str] = None) -> str:
+    eff_risk = _effective_risk(patch, gate_id, token)
     kind = token.get("kind")
     # §7.1 assignment priority: prohibited > refused > reserved > auto/human
     for p in patch.get("prohibitions", []):
@@ -1183,7 +1239,18 @@ def _evaluate_with_log(
             g = ready.pop(0)
             v = effective(g)
             result.setdefault(g, {})["verdict"] = v
-            log.append({"gate": g, "verdict": v})
+            entry: dict[str, Any] = {"gate": g, "verdict": v}
+            # §7.4: when this gate's own risk floor raised the token's risk, the
+            # log entry MUST carry both the declared token (as presented) and the
+            # host-observed facts that produced the gate-computed risk actually
+            # tested — so redress weighs what was claimed against what was
+            # observed, never a silently reconciled value. Unraised (declared ==
+            # effective), the entry stays {gate, verdict} as before.
+            gate_eff_risk = _effective_risk(patch, g, token)
+            if gate_eff_risk != token.get("risk"):
+                entry["token"] = token
+                entry["observed"] = {"kind": token.get("kind"), "risk": gate_eff_risk}
+            log.append(entry)
             if g in egress:
                 result[g]["master"] = "act" if (v == "auto" and obligations_attached) else "withhold"
             for t in succ.get(g, []):
@@ -1297,7 +1364,7 @@ def apply(source_or_patch) -> dict[str, Any]:
     patch = parse(source_or_patch) if isinstance(source_or_patch, str) else source_or_patch
     report = validate(patch)
     if not report["ok"]:
-        raise ApplyError(report["errors"])
+        raise ApplyError(report["errors"], reason=report.get("reason"))
     return patch
 
 
