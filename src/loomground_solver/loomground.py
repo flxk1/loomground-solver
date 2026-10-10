@@ -16,6 +16,7 @@ canonicalization and the ISO/IEC 22989 autonomy ladder, v0.10; host-observed
 """
 from __future__ import annotations
 
+import copy
 import re
 from typing import Any, Optional
 
@@ -1164,18 +1165,36 @@ def evaluate(patch: dict[str, Any], transport: dict[str, Any]) -> dict[str, Any]
     return result
 
 
-def evaluate_log(patch: dict[str, Any], transport: dict[str, Any]) -> list[dict[str, str]]:
+def evaluate_log(patch: dict[str, Any], transport: dict[str, Any]) -> list[dict[str, Any]]:
     """The §7.4 log trace: one entry per activated gate, in evaluation order,
-    each carrying that gate's effective verdict (§7.2 join), as {gate, verdict}.
-    The presence and ordering of these entries is part of the observation and
-    conformance-tested; a missing or misordered entry is itself a failure."""
+    each carrying that gate's effective verdict (§7.2 join), as
+    {gate, verdict}. When that gate's own risk floor raised the activation's
+    token risk, the entry additionally carries `token` (the declared token,
+    exactly as presented — a snapshot, never the live activation dict) and
+    `observed` ({kind, risk}, the gate-computed facts actually tested) —
+    SPEC §7.4's dual record. Every other entry stays {gate, verdict} only.
+    The presence, ordering, and optional fields of these entries are part of
+    the observation and conformance-tested; a missing, misordered, or
+    wrongly-populated entry is itself a failure."""
     _, log = _evaluate_with_log(patch, transport)
     return log
 
 
 def _evaluate_with_log(
-    patch: dict[str, Any], transport: dict[str, Any]
-) -> tuple[dict[str, Any], list[dict[str, str]]]:
+    patch: dict[str, Any], transport: dict[str, Any],
+    _declared_tokens: Optional[list[Any]] = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """`_declared_tokens` is PRIVATE — not part of the LoomgroundImplementation
+    protocol `evaluate()`/`evaluate_log()` expose, and never read from the
+    activation dict itself (an activation cannot inject or forge it: no key
+    on it is ever consulted here). It exists only so `reason()`'s risk_table
+    (PROM-001) path can tell this function what the actor originally
+    declared before solver-internal governance replaced `token` for
+    evaluation — a parallel list, aligned by index to
+    `transport["activations"]`, supplied ONLY by that caller. `None` at an
+    index (the default for the whole list, and the only possibility outside
+    that one caller) means: the activation's own `token` IS the declared
+    one."""
     by_id = {nd["id"]: nd for nd in patch.get("nodes", [])}
     decl_pos = {nid: i for i, nid in enumerate(by_id)}
     succ: dict[str, list[str]] = {}
@@ -1198,11 +1217,21 @@ def _evaluate_with_log(
     obligations_attached = oblig_gates.issubset(egress)
 
     result: dict[str, Any] = {}
-    log: list[dict[str, str]] = []
-    for act in transport.get("activations", []):
+    log: list[dict[str, Any]] = []
+    for index, act in enumerate(transport.get("activations", [])):
         if not _valid_activation_shape(act):
             continue
         token = act["token"]
+        # §7.4's log `token` field is the DECLARED token — what the actor
+        # presented, before any solver-internal governance (PROM-001)
+        # replaces it for evaluation. `_declared_tokens` (private, index-
+        # aligned, supplied only by reason()) overrides it; absent that (the
+        # plain, non-PROM-001 path, and every public caller), the
+        # activation's own token IS the declared one. Either way
+        # `_evaluate_with_log` never EVALUATES against a different value
+        # than `token` below — only the log DISPLAYS the declared one.
+        declared = _declared_tokens[index] if _declared_tokens is not None and index < len(_declared_tokens) else None
+        declared_token = declared if declared is not None else token
         src = act["source"]
         actor = act.get("actor")
         reach: set[str] = set()
@@ -1245,10 +1274,15 @@ def _evaluate_with_log(
             # host-observed facts that produced the gate-computed risk actually
             # tested — so redress weighs what was claimed against what was
             # observed, never a silently reconciled value. Unraised (declared ==
-            # effective), the entry stays {gate, verdict} as before.
+            # effective), the entry stays {gate, verdict} as before. `token` is
+            # always a DEEP copy of the declared token, never a live reference
+            # to the caller's activation dict (a shallow `dict(...)` would
+            # still share a nested list like `provenance` with the caller;
+            # mutating that nested value after this call must never
+            # retroactively change an already-built log entry).
             gate_eff_risk = _effective_risk(patch, g, token)
             if gate_eff_risk != token.get("risk"):
-                entry["token"] = token
+                entry["token"] = copy.deepcopy(declared_token)
                 entry["observed"] = {"kind": token.get("kind"), "risk": gate_eff_risk}
             log.append(entry)
             if g in egress:
@@ -1412,19 +1446,30 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
     transport = dict(transport or {"activations": []})
 
     prom001_log: list[dict[str, Any]] = []
+    # Index-aligned with the (possibly governed) activations list passed to
+    # `_evaluate_with_log` below; PRIVATE to this function — never read from
+    # or written onto any activation, so nothing a caller puts in a
+    # transport dict (including a key literally named `_declared_token`) can
+    # reach or forge it. `None` at an index means "use that activation's own
+    # token" (every index outside the risk_table path, and every index here
+    # whose activation was never actually governed).
+    declared_tokens: Optional[list[Any]] = None
     if risk_table is not None:
         from .prom001 import HostObservation, govern_token  # deferred: avoids a module cycle
 
         governed_activations = []
+        declared_tokens = []
         for act in transport.get("activations", []):
             if not isinstance(act, dict) or not isinstance(act.get("token"), dict):
                 # not our shape to govern - pass through unchanged so the main
                 # loop below rejects it as "invalid" (never abort the batch).
                 governed_activations.append(act)
+                declared_tokens.append(None)
                 continue
             observed = act.get("observed")
             if observed is None:
                 governed_activations.append(act)
+                declared_tokens.append(None)
                 continue
             # `observed` (and its kind/target/context/grade) is host-supplied
             # but still untrusted shape at this boundary — anything other than
@@ -1438,6 +1483,7 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
                 for f in ("kind", "target", "context", "grade")
             ):
                 governed_activations.append(None)
+                declared_tokens.append(None)
                 continue
             # SPEC §4 MUST-reject / §7.4: the declared token logged beside the
             # observation is itself required to be well-formed (Felix, PROM-001
@@ -1448,6 +1494,7 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
             # before (host-observed kind/risk, unaffected by this gate).
             if not validate_token(act["token"]):
                 governed_activations.append(None)
+                declared_tokens.append(None)
                 continue
             host_observation = HostObservation(
                 kind=observed.get("kind"), target=observed.get("target", ""),
@@ -1463,11 +1510,19 @@ def reason(source_or_patch, transport: Optional[dict[str, Any]] = None,
                 "floored": governed.floored,
                 "floor_reason": governed.floor_reason,
             })
+            # §7.4: evaluate() runs against the GOVERNED token (host-observed
+            # kind/risk, as PROM-001 requires), but the log's `token` field
+            # must stay the DECLARED one — what the actor actually presented.
+            # `declared_tokens[index]` carries a deep-copied snapshot of it
+            # through to `_evaluate_with_log` by position, not through the
+            # activation dict, so no activation-supplied key can substitute a
+            # forged value and the governed token is still what gets
+            # evaluated.
             governed_activations.append({**act, "token": governed.token})
+            declared_tokens.append(copy.deepcopy(act["token"]))
         transport = {**transport, "activations": governed_activations}
 
-    evaluation = evaluate(patch, transport)
-    log = evaluate_log(patch, transport)
+    evaluation, log = _evaluate_with_log(patch, transport, declared_tokens)
     accepted, undecided, rejected = [], [], {}
 
     for index, activation in enumerate(transport.get("activations", [])):

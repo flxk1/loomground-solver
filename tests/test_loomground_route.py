@@ -248,6 +248,100 @@ def test_non_dict_token_with_risk_table_is_rejected_not_a_crash():
     assert result["undecided"] == []
 
 
+RISK_TABLE_FLOOR_RAISE = """\
+actor bot
+gate decide risk high grant bot
+cord bot -> decide
+cord decide -> master
+"""
+
+
+def test_risk_table_log_token_is_the_declared_token_not_the_governed_one():
+    """§7.4: when a risk_table governs the token (PROM-001) AND the gate's own
+    floor then raises risk further, the log's `token` field MUST be the
+    DECLARED token the actor presented — never the governed one evaluate()
+    actually ran against. The actor declares `risk low`; the risk table
+    governs that up to `medium` (host-observed kind matches the declared one,
+    so PROM-001's kind-mismatch floor never fires — only the raise-only risk
+    ratchet is exercised); `decide`'s own floor (`high`) then raises it
+    again. The entry's `token.risk` must read the actor's original `low`
+    claim, never the table-governed `medium` nor the gate-floored `high`.
+    Also: a copy, not a live reference — mutating the original token after
+    the call must not retroactively change the already-built log entry."""
+    declared_token = {"id": "t1", "kind": "deploy_action", "risk": "low",
+                       "party": "deployer", "provenance": []}
+    run = {"activations": [{
+        "actor": "bot", "source": "decide", "token": declared_token,
+        "observed": {"kind": "deploy_action"},
+    }]}
+    risk_table = GovernedRiskTable(entries={("deploy_action", "", "", ""): "medium"})
+
+    result = reason_loomground(RISK_TABLE_FLOOR_RAISE, run, risk_table=risk_table)
+
+    entry = result["trace"]["log"][0]
+    assert entry["gate"] == "decide"
+    assert entry["token"] == declared_token
+    assert entry["token"]["risk"] == "low"                 # declared, never "medium" (table) or "high" (floor)
+    assert entry["observed"] == {"kind": "deploy_action", "risk": "high"}
+    assert entry["token"] is not declared_token            # a snapshot, not a live reference
+
+    declared_token["risk"] = "critical"
+    assert result["trace"]["log"][0]["token"]["risk"] == "low", (
+        "mutating the caller's token after the call must not change the log")
+
+
+def test_log_token_survives_nested_provenance_mutation():
+    """A shallow `dict(...)` copy would still share a nested list
+    (`provenance`) with the caller's token — mutating that list in place
+    after the call must not retroactively change an already-built log
+    entry. Exercises the plain (no risk_table) path, where `decide`'s own
+    floor (high) raises the declared `low` risk."""
+    declared_token = {"id": "t1", "kind": "act", "risk": "low",
+                       "party": "deployer", "provenance": ["src1"]}
+    run = {"activations": [{
+        "actor": "bot", "source": "decide", "token": declared_token,
+    }]}
+
+    result = reason_loomground(RISK_TABLE_FLOOR_RAISE, run)
+
+    entry = result["trace"]["log"][0]
+    assert entry["token"]["provenance"] == ["src1"]
+
+    declared_token["provenance"].append("mutated-after-the-fact")
+    assert result["trace"]["log"][0]["token"]["provenance"] == ["src1"], (
+        "mutating a nested list on the caller's token after the call "
+        "must not change the log (deep, not shallow, copy)")
+
+
+@pytest.mark.parametrize("forged", [
+    "not-a-dict", 123, None, ["x"], {"id": "forged", "kind": "forged",
+                                      "risk": "critical", "party": "x", "provenance": []},
+])
+def test_declared_token_activation_key_is_ignored_and_cannot_forge_or_crash(forged):
+    """An activation is never trusted to carry its own `_declared_token` —
+    that key is purely internal plumbing between reason()'s risk_table
+    governance step and `_evaluate_with_log`'s log-building step, passed as
+    a private positional list, never read off the activation dict. A caller
+    putting ANY value under that key on its own activation — including a
+    non-dict that would crash a naive `dict(...)`/attribute read, or a
+    well-formed but false token aimed at forging the §7.4 record — must be
+    silently ignored: the log must show the activation's REAL own token,
+    and the call must not crash."""
+    declared_token = {"id": "t1", "kind": "act", "risk": "low",
+                       "party": "deployer", "provenance": []}
+    run = {"activations": [{
+        "actor": "bot", "source": "decide", "token": declared_token,
+        "_declared_token": forged,
+    }]}
+
+    result = reason_loomground(RISK_TABLE_FLOOR_RAISE, run)
+
+    entry = result["trace"]["log"][0]
+    assert entry["token"] == declared_token
+    assert entry["token"]["kind"] == "act"
+    assert entry["token"]["risk"] == "low"
+
+
 def test_unattached_obligation_withhold_reports_auto_as_the_reason():
     result = reason_loomground(OBLIGATION_UNATTACHED, fanout_transport())
     assert result["accepted"] == []
