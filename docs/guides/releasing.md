@@ -19,7 +19,7 @@ contradiction:
   `.release-please-manifest.json`, currently `0.6.0`). Release Please derives
   its version from conventional commits on `main`, as described in
   [Release PRs](#1-release-prs) below.
-- **The agent-host plugin bundle** (tracked in `package.json` and
+- **The assistant plugin bundle** (tracked in `package.json` and
   `.claude-plugin/plugin.json`, currently `0.3.0`). Its version is bumped by
   hand in both files when the bundled skills change; it does not go through
   Release Please and does not track the kernel's version.
