@@ -15,6 +15,34 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
+#: The default modality vocabulary bridge: every Versum native deontic label this
+#: adapter ships recognizing, onto the solver's ``CONTRADICTIONS`` vocabulary
+#: (:mod:`loomground_solver.rulepacks`) — see the bundled JSON resource below for
+#: the actual pairing. Without this bridge, a binding Versum label and its
+#: solver-side counterpart never matched, so an opposing pair of norms over the
+#: same act went undetected (the identity default this replaces). The null/
+#: not-deontic native values are explicitly non-deontic — mapped to "" (no modal,
+#: no :class:`~loomground_solver.scenario.Norm`) — rather than passed through
+#: unexamined. A native modality this map does not cover is a vocabulary gap,
+#: not a value to guess at: :meth:`VersumNormSource._modal` raises rather than
+#: letting it reach ``Norm.deontic`` unexamined — on every path that calls it,
+#: including a deontic composition's own ``nd_scope.modal`` override.
+#:
+#: Held as a bundled JSON resource, not a Python dict literal: the pure-core
+#: purity test (``test_dependency_inversion.test_no_domain_literal_in_code``)
+#: forbids a corpus/domain literal in executable code even in the one module
+#: meant to translate one external system's vocabulary. The mapping is data the
+#: adapter reads, not logic it hard-codes — the same "label, not logic"
+#: exemption that module's docstring already grants comments, docstrings and
+#: the ``PROFILES`` render-vocabulary.
+def _load_default_modality_map() -> dict:
+    path = Path(__file__).with_name("versum_modality_map.json")
+    with path.open(encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+DEFAULT_MODALITY_MAP = _load_default_modality_map()
+
 CLAIM_AXES_SCHEMA = "loomground.versum.claim-axes/v1"
 
 #: The five recognized axes, in canonical order. Any other key is out of bounds.
@@ -166,7 +194,7 @@ class VersumNormSource:
         self._bindings = (
             Path(bindings_csv) if bindings_csv else root / "nd" / "bindings.csv"
         )
-        self._modality_map = dict(modality_map or {})
+        self._modality_map = {**DEFAULT_MODALITY_MAP, **dict(modality_map or {})}
 
     @staticmethod
     def _csv_rows(path: Path, *, json_value: bool = False) -> list[dict]:
@@ -291,7 +319,17 @@ class VersumNormSource:
                 span["exception"] = scope.get("exception") or self._participant(
                     composition, "exception"
                 )
-                span["modal"] = scope.get("modal") or span["modal"]
+                # A deontic composition's own ``nd_scope.modal`` is a second native
+                # Versum modality value, read straight off the typed composition
+                # rather than the claim row — it overrides the row's modality when
+                # present, but it is still Versum's own vocabulary, not Solver's,
+                # so it goes through the identical bridge/raise-on-unmapped as
+                # ``row.get("modality")`` above. Bypassing it here would let a raw
+                # native value (or an unmapped one) reach ``Norm.deontic`` silently
+                # through this one path, exactly what :meth:`_modal` exists to stop.
+                scope_modal = scope.get("modal")
+                if scope_modal:
+                    span["modal"] = self._modal(scope_modal)
             elif kind == "conditional":
                 span["condition"] = scope.get("condition") or self._participant(
                     composition, "antecedent"
@@ -314,7 +352,14 @@ class VersumNormSource:
 
     def _modal(self, value) -> str:
         native = str(value or "").strip()
-        return str(self._modality_map.get(native, native))
+        try:
+            return str(self._modality_map[native])
+        except KeyError:
+            raise ValueError(
+                f"unmapped Versum modality {native!r}: add it to modality_map "
+                "(or classify it explicitly as non-deontic with \"\") before it "
+                "can reach Norm.deontic; it is never passed through unexamined"
+            ) from None
 
     def _native_indexes(self):
         return (

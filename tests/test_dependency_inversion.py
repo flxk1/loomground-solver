@@ -38,6 +38,20 @@ DOMAIN_LITERALS = (
 )
 
 PY_FILES = sorted(p for p in PKG.rglob("*.py") if "__pycache__" not in p.parts)
+JSON_FILES = sorted(p for p in PKG.rglob("*.json") if "__pycache__" not in p.parts)
+
+# Reviewed, explicit exemptions from the domain-literal scan on packaged JSON data
+# (see ``test_no_domain_literal_in_json_data``). Named individually, not by
+# directory, so adding one is a visible diff a reviewer has to look at — never a
+# silent carve-out. ``adapters/versum_modality_map.json`` exists for exactly one
+# reason: to translate Versum's own modality vocabulary (law-eu's "obliged" etc.,
+# :mod:`loomground_solver.adapters.versum`) onto the solver's own. A file whose
+# job IS naming an external system's vocabulary is expected to carry that
+# vocabulary by name — the purity rule this test enforces guards REASONING code
+# from a domain leak, not a translation table from doing its one job. Moving a
+# literal out of ``.py`` and into this JSON file is not meant to (and must not)
+# hide it from this check; this exemption is what keeps that honest.
+JSON_DOMAIN_LITERAL_EXEMPT = frozenset({"versum_modality_map.json"})
 
 # The graded-panel case corpus (``eval/panel/cases/``) is domain DATA by design —
 # CaseSpec instances describing real statutes/contracts/policies — not engine
@@ -131,3 +145,24 @@ def test_no_domain_literal_in_code(path):
     code = _code_only(path).lower()
     hits = [lit for lit in DOMAIN_LITERALS if lit in code]
     assert not hits, f"{path.name} hard-codes domain literal(s) {hits} in code"
+
+
+def test_there_are_json_files_to_check():
+    assert JSON_FILES, f"no package JSON data found under {PKG}"
+
+
+@pytest.mark.parametrize("path", JSON_FILES, ids=lambda p: p.name)
+def test_no_domain_literal_in_json_data(path):
+    """Packaged JSON data is scanned exactly like ``.py`` code for a domain
+    literal — it ships inside the wheel and is read at import time, so it is as
+    load-bearing as code — except the reviewed, explicit exemptions in
+    ``JSON_DOMAIN_LITERAL_EXEMPT``. This is what keeps moving a literal out of a
+    ``.py`` file and into packaged JSON from being a way to dodge this test: the
+    literal still has to clear this check, by name, or be in the exemption set
+    above with its reason stated."""
+    if path.name in JSON_DOMAIN_LITERAL_EXEMPT:
+        pytest.skip(f"{path.name} is the reviewed vocabulary-bridge exemption — "
+                    "see JSON_DOMAIN_LITERAL_EXEMPT's docstring")
+    text = path.read_text().lower()
+    hits = [lit for lit in DOMAIN_LITERALS if lit in text]
+    assert not hits, f"{path.name} hard-codes domain literal(s) {hits} in packaged data"
