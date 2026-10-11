@@ -13,8 +13,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import pytest
+
 from loomground_solver.ports import NormSource, Governance, NullGovernance
 from loomground_solver import api
+from loomground_solver import Norm, Scenario, derive, GENERIC_PACK
 from loomground_solver.adapters import VersumNormSource
 
 
@@ -44,15 +47,67 @@ def test_versum_normsource_maps_claims_keyed_by_canonical_urn(tmp_path):
     s0 = spans[0]
     assert s0["pinpoint"] == "urn:dls:celex:32016R0679"
     assert s0["anchors"][0]["entity"] == "celex"
-    assert s0["modal"] == "obliged"
+    # default modality_map: Versum's "obliged" now bridges to the solver's
+    # "obligatory" (rulepacks.CONTRADICTIONS), not an identity pass-through.
+    assert s0["modal"] == "obligatory"
     assert s0["condition"] == "" and s0["consequence"] == "" and s0["exception"] == ""
     assert src.held_pinpoints() == {"urn:dls:celex:32016R0679", "urn:kg:source:note1"}
     assert [s["pinpoint"] for s in src.norm_spans_for({"celex"})] == ["urn:dls:celex:32016R0679"]
+    # "definitional" is explicitly non-deontic: no modal, never a guessed Norm.
+    assert spans[1]["modal"] == ""
 
 
 def test_versum_normsource_accepts_host_modality_vocabulary(tmp_path):
     source = VersumNormSource(_write_claims(tmp_path), modality_map={"obliged": "shall"})
     assert source.norm_spans_for(set())[0]["modal"] == "shall"
+
+
+def test_versum_default_modality_map_yields_deontic_collision(tmp_path):
+    """S1: an obliged claim and a prohibited claim on the same act must yield a
+    genuine collision once the adapter's default modality_map bridges Versum's
+    vocabulary onto the solver's (rulepacks.CONTRADICTIONS)."""
+    root = tmp_path / ".versum"
+    root.mkdir()
+    with open(root / "claims.csv", "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=(
+            "canonical_urn", "source_urn", "text", "polarity", "predicate",
+            "modality"))
+        writer.writeheader()
+        writer.writerow({
+            "canonical_urn": "urn:dls:celex:a", "source_urn": "urn:dls:source:a",
+            "text": "The controller shall share the data.", "polarity": "D",
+            "predicate": "imposes", "modality": "obliged"})
+        writer.writerow({
+            "canonical_urn": "urn:dls:celex:b", "source_urn": "urn:dls:source:b",
+            "text": "The controller shall not share the data.", "polarity": "D",
+            "predicate": "imposes", "modality": "prohibited"})
+    spans = VersumNormSource(root).norm_spans_for(set())
+    assert [s["modal"] for s in spans] == ["obligatory", "prohibited"]
+    norms = [Norm("share-data", span["modal"], source=span["pinpoint"]) for span in spans]
+    resolution = derive(Scenario("w", norms=norms), pack=GENERIC_PACK).resolution_for("share-data")
+    assert resolution.status == "open" and resolution.verdict is None
+    assert ("urn:dls:celex:a", "urn:dls:celex:b") in [
+        tuple(sorted(c)) for c in resolution.collisions
+    ]
+
+
+def test_versum_normsource_rejects_unmapped_modality(tmp_path):
+    """An unmapped Versum modality must never pass through silently onto
+    Norm.deontic — it is a vocabulary gap and fails loudly."""
+    root = tmp_path / ".versum"
+    root.mkdir()
+    with open(root / "claims.csv", "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=(
+            "canonical_urn", "source_urn", "text", "polarity", "predicate",
+            "modality"))
+        writer.writeheader()
+        writer.writerow({
+            "canonical_urn": "urn:dls:celex:x", "source_urn": "urn:dls:source:x",
+            "text": "Something unmapped.", "polarity": "D", "predicate": "imposes",
+            "modality": "recommendation"})
+    src = VersumNormSource(root)
+    with pytest.raises(ValueError, match="unmapped Versum modality"):
+        src.norm_spans_for(set())
 
 
 def test_versum_normsource_preserves_grounded_deontic_composition(tmp_path):
