@@ -38,11 +38,13 @@ _SOURCE = (
     "Art 9: risk-management system. Art 16: high-risk provider obligations. "
     "Art 25: value-chain obligation allocation. Art 50: transparency / synthetic "
     "content disclosure. Art 51/55: GPAI with systemic risk. Art 53: GPAI provider "
-    "obligations. Art 54: non-EU provider authorised representative. Art 40: "
+    "obligations. Art 54: authorised representative of a non-EU GPAI-model "
+    "provider. Art 40: "
     "harmonised standards presumption of conformity. Art 43: conformity assessment. "
     "Art 56: codes of practice. Art 64-70: AI Office / Board / authorities. "
     "Art 99: penalties up to EUR 35 000 000 or 7% of worldwide turnover. "
-    "Art 111/113: entry into force and staggered application."
+    "Art 111: systems already on the market; Art 113: entry into force and "
+    "staggered application."
 )
 
 
@@ -170,7 +172,8 @@ CASE = CaseSpec(
         IntentionalCondition(
             name="authorised-representative-mandate", dimension="relational",
             grounding=Grounding.span("authorised-representative-mandate", "Art 54"),
-            warrant="Art 54: a non-EU provider must appoint an EU representative",
+            warrant=("Art 54: a non-EU provider of a general-purpose AI model must "
+                     "appoint an EU authorised representative"),
             literal="eu_authorised_representative_duty",
             present=["eu_authorised_representative_duty"],
         ),
