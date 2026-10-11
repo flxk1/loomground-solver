@@ -15,16 +15,18 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-#: The default modality vocabulary bridge: Versum's native deontic labels onto
-#: the solver's ``CONTRADICTIONS`` vocabulary (:mod:`loomground_solver.rulepacks`).
-#: Without this, Versum's native "obliged" label never matched the solver's
-#: "obligatory" and an obliged-vs-prohibited collision went undetected (the
-#: identity default this replaces). The null/definitional native values are
-#: explicitly non-deontic — mapped to "" (no modal, no
-#: :class:`~loomground_solver.scenario.Norm`) — rather than passed through
+#: The default modality vocabulary bridge: every Versum native deontic label this
+#: adapter ships recognizing, onto the solver's ``CONTRADICTIONS`` vocabulary
+#: (:mod:`loomground_solver.rulepacks`) — see the bundled JSON resource below for
+#: the actual pairing. Without this bridge, a binding Versum label and its
+#: solver-side counterpart never matched, so an opposing pair of norms over the
+#: same act went undetected (the identity default this replaces). The null/
+#: not-deontic native values are explicitly non-deontic — mapped to "" (no modal,
+#: no :class:`~loomground_solver.scenario.Norm`) — rather than passed through
 #: unexamined. A native modality this map does not cover is a vocabulary gap,
 #: not a value to guess at: :meth:`VersumNormSource._modal` raises rather than
-#: letting it reach ``Norm.deontic`` unexamined.
+#: letting it reach ``Norm.deontic`` unexamined — on every path that calls it,
+#: including a deontic composition's own ``nd_scope.modal`` override.
 #:
 #: Held as a bundled JSON resource, not a Python dict literal: the pure-core
 #: purity test (``test_dependency_inversion.test_no_domain_literal_in_code``)
@@ -317,7 +319,17 @@ class VersumNormSource:
                 span["exception"] = scope.get("exception") or self._participant(
                     composition, "exception"
                 )
-                span["modal"] = scope.get("modal") or span["modal"]
+                # A deontic composition's own ``nd_scope.modal`` is a second native
+                # Versum modality value, read straight off the typed composition
+                # rather than the claim row — it overrides the row's modality when
+                # present, but it is still Versum's own vocabulary, not Solver's,
+                # so it goes through the identical bridge/raise-on-unmapped as
+                # ``row.get("modality")`` above. Bypassing it here would let a raw
+                # native value (or an unmapped one) reach ``Norm.deontic`` silently
+                # through this one path, exactly what :meth:`_modal` exists to stop.
+                scope_modal = scope.get("modal")
+                if scope_modal:
+                    span["modal"] = self._modal(scope_modal)
             elif kind == "conditional":
                 span["condition"] = scope.get("condition") or self._participant(
                     composition, "antecedent"

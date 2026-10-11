@@ -104,7 +104,9 @@ def test_versum_normsource_rejects_unmapped_modality(tmp_path):
         writer.writerow({
             "canonical_urn": "urn:dls:celex:x", "source_urn": "urn:dls:source:x",
             "text": "Something unmapped.", "polarity": "D", "predicate": "imposes",
-            "modality": "recommendation"})
+            # not a value any shipped profile or real store emits — a genuine
+            # vocabulary gap, not one of the recognised non-deontic labels.
+            "modality": "mystery-modal"})
     src = VersumNormSource(root)
     with pytest.raises(ValueError, match="unmapped Versum modality"):
         src.norm_spans_for(set())
@@ -131,7 +133,10 @@ def test_versum_normsource_preserves_grounded_deontic_composition(tmp_path):
             {"role": "condition", "target_id": "request-valid", "evidence_ids": ["claim:1"]},
             {"role": "exception", "target_id": "legal-hold", "evidence_ids": ["claim:1"]},
         ],
-        "nd_scope": {"modal": "prohibition", "jurisdiction": ["eu"]},
+        # a REAL native Versum modality (not a made-up label): this exercises
+        # the deontic composition's nd_scope.modal override path through the
+        # same mapping/raise-on-unmapped as row.get("modality") (S1 round 2).
+        "nd_scope": {"modal": "prohibited", "jurisdiction": ["eu"]},
     }
     (root / "compositions.jsonl").write_text(
         json.dumps(composition) + "\n", encoding="utf-8")
@@ -170,12 +175,67 @@ def test_versum_normsource_preserves_grounded_deontic_composition(tmp_path):
     assert span["consequence"] == "erase"
     assert span["condition"] == "request-valid"
     assert span["exception"] == "legal-hold"
-    assert span["modal"] == "prohibition"
+    assert span["modal"] == "prohibited"  # mapped (prohibited -> prohibited), not raw
     assert span["composition_ids"] == ["cmp:rule:1"]
-    assert span["nd_scope"] == [{"modal": "prohibition", "jurisdiction": ["eu"]}]
+    assert span["nd_scope"] == [{"modal": "prohibited", "jurisdiction": ["eu"]}]
     assert span["compositions"] == [composition]
     assert span["nd_assignments"][0]["value"] == ["eu"]
     assert span["nd_bindings"][0]["assignment_id"] == "nda:1"
+
+
+def test_versum_normsource_rejects_unmapped_modality_via_nd_scope(tmp_path):
+    """S1 round 2: the deontic composition's own ``nd_scope.modal`` override is a
+    SECOND path onto ``Norm.deontic`` — a raw or unmapped value reaching it
+    through this path, bypassing the row's own ``modality`` column entirely,
+    must fail exactly like an unmapped ``row.get("modality")`` does."""
+    root = tmp_path / ".versum"
+    root.mkdir()
+    with open(root / "claims.csv", "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=(
+            "item_id", "canonical_urn", "source_urn", "text", "polarity",
+            "predicate", "modality"))
+        writer.writeheader()
+        writer.writerow({
+            "item_id": "claim:1", "canonical_urn": "urn:dls:celex:rule2",
+            "source_urn": "urn:dls:source:policy2", "text": "Controller must erase.",
+            # the ROW's own modality is a recognised, mapped value — the point of
+            # this test is that the OVERRIDE below is checked independently.
+            "polarity": "N", "predicate": "imposes", "modality": "obliged",
+        })
+    composition = {
+        "composition_id": "cmp:rule:2", "kind": "deontic",
+        "participants": [
+            {"role": "bearer", "target_id": "controller", "evidence_ids": ["claim:1"]},
+        ],
+        "nd_scope": {"modal": "mystery-modal"},
+    }
+    (root / "compositions.jsonl").write_text(
+        json.dumps(composition) + "\n", encoding="utf-8")
+    src = VersumNormSource(root)
+    with pytest.raises(ValueError, match="unmapped Versum modality"):
+        src.norm_spans_for(set())
+
+
+# The distinct `modality` values a read-only scan (2026-10-11) of the four real
+# Versum stores under ~/work/loomground-data/ (music-rights, legal-first-aid,
+# digital-law, trademark) actually carries — a fixture, not a live filesystem
+# read, so this test stays hermetic and portable across machines/CI. S1 round 2
+# (addendum): the shipped default map must cover all of it without raising.
+REAL_STORE_MODALITY_VALUES = frozenset({
+    "", "definitional", "exempt", "null", "obligatory", "obliged", "permitted",
+    "prohibited", "void", "interrogative",
+})
+
+
+def test_default_modality_map_covers_every_value_in_the_real_stores(tmp_path):
+    source = VersumNormSource(tmp_path)  # default modality_map, no override
+    for value in REAL_STORE_MODALITY_VALUES:
+        source._modal(value)  # must not raise for any real-store value
+
+
+def test_default_modality_map_maps_the_literal_string_null_to_non_deontic(tmp_path):
+    source = VersumNormSource(tmp_path)
+    assert source._modal("null") == ""
 
 
 class _FakeGov:
