@@ -1,9 +1,8 @@
 # loomground-solver — VISION & POINTS OF RECORD
 
-The canonical statement of what this solver is for, in product-owner terms.
-Written 2026-07-18 as a faithful readback of the design conversation, so any
-reviewer, human or model, can check the code against the intent.
-Nothing here is collapsed or paraphrased away. Companion to the
+The canonical statement of what this solver is for, in product-owner terms,
+stated in full so any reviewer, human or model, can check the code against the
+intent. Nothing here is collapsed or paraphrased away. Companion to the
 [operations guide](../guides/operations.md) (how to run it).
 
 ---
@@ -207,7 +206,7 @@ Built this row (supervised loops, each verified, then adversarially reviewed):
   **autonomy-graded** swap proposal (only an autonomous grade auto-applies; the
   default grade escalates). Injectable chain-reader + verifier; proven against a
   faked chain.
-- Earlier in the session: the LLM-interpretation bridge (`interpret.py`) and the
+- Also built: the LLM-interpretation bridge (`interpret.py`) and the
   core data-pump export (`datapump.py`).
 
 Open / next (rough priority): preferred/stable argumentation semantics (reserved,
