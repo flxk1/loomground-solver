@@ -2,7 +2,7 @@
 
 The canonical statement of what this solver is for, in product-owner terms.
 Written 2026-07-18 as a faithful readback of the design conversation, so any
-reviewer (human or a model like Codex) can check the code against the intent.
+reviewer, human or model, can check the code against the intent.
 Nothing here is collapsed or paraphrased away. Companion to the
 [operations guide](../guides/operations.md) (how to run it).
 
