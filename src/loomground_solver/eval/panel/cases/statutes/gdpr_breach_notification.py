@@ -71,11 +71,12 @@ CASE = CaseSpec(
     title="GDPR Art 33 breach-notification (non-EU controller, EU data subjects)",
     case_kind="statute",
     source_text=(
-        "GDPR Art 33(1): in the case of a personal data breach, the controller "
-        "shall notify the supervisory authority without undue delay and, where "
-        "feasible, not later than 72 hours after having become aware of it, "
-        "unless the breach is unlikely to result in a risk to the rights and "
-        "freedoms of natural persons."
+        "GDPR Art 33(1): In the case of a personal data breach, the controller "
+        "shall without undue delay and, where feasible, not later than 72 hours "
+        "after having become aware of it, notify the personal data breach to the "
+        "supervisory authority competent in accordance with Article 55, unless "
+        "the personal data breach is unlikely to result in a risk to the rights "
+        "and freedoms of natural persons."
     ),
     question=("Is the controller liable for a breach-notification failure under "
               "GDPR Art 33?"),
