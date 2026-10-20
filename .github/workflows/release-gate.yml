@@ -33,3 +33,19 @@ jobs:
       - run: python tools/check_adapter_selection_neutrality.py
       - run: python tools/check_register.py
       - run: python -m build
+
+  neutrality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - name: prose and language surfaces are tool- and vendor-neutral
+        run: |
+          # Functional paths such as .claude-plugin/ are identifiers the tooling needs, not prose.
+          hits=$(grep -rniE "$NEUTRALITY_PATTERN" \
+               README.md llms.txt CHANGELOG.md docs src skills \
+               --exclude-dir=__pycache__ 2>/dev/null | grep -v '\.claude-plugin/' || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "vendor/model/framework name found in a prose or language surface"; exit 1
+          fi
+          echo "prose and language surfaces are neutral"
