@@ -12,7 +12,7 @@ The runtime is standard-library-only apart from the data-only
 `loomground-governance` package and `loomground-deontic`, consumed from
 [`flxk1/loomground-governance`](https://github.com/flxk1/loomground-governance) and
 [`flxk1/loomground-deontic`](https://github.com/flxk1/loomground-deontic) as
-pinned release tags (`v0.11.2`, `v0.2.1`) — never an unpinned branch, so a
+pinned release tags (`v0.12.2`, `v0.2.1`) — never an unpinned branch, so a
 release can always be reinstalled identically.
 
 It can pair with any knowledge graph through the vendor-neutral
