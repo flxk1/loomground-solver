@@ -28,8 +28,8 @@ conformance runner through `tools/run_loomground_conformance.py`.
 
 A Solver release pins compatible published packages — `pyproject.toml` declares
 `loomground-governance` and `loomground-deontic` as git references to their
-release tags (governance `v0.11.2`, deontic `v0.2.1`); CI first installs the
-commits `requirements-dev.txt` pins (governance `v0.11.2`, deontic `v0.2.0`). It does not depend on either language repository's `main`
+release tags (governance `v0.12.2`, deontic `v0.2.1`); CI first installs the
+commits `requirements-dev.txt` pins (governance `v0.12.2`, deontic `v0.2.1`). It does not depend on either language repository's `main`
 branch. `main` is the ecosystem's declared integration line
 (`docs/guides/releasing.md`, "Do not release stable packages against `main`"):
 the term names where a *future* continuous-conformance line against the
