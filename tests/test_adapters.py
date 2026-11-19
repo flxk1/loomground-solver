@@ -217,7 +217,7 @@ def test_versum_normsource_rejects_unmapped_modality_via_nd_scope(tmp_path):
 
 
 # The distinct `modality` values a read-only scan (2026-10-11) of the four real
-# Versum stores under ~/work/loomground-data/ (music-rights, legal-first-aid,
+# Versum stores (music-rights, legal-first-aid,
 # digital-law, trademark) actually carries — a fixture, not a live filesystem
 # read, so this test stays hermetic and portable across machines/CI. S1 round 2
 # (addendum): the shipped default map must cover all of it without raising.
